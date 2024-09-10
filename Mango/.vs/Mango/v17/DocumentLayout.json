@@ -1,7 +1,12 @@
 {
   "Version": 1,
   "WorkspaceRootPath": "C:\\Users\\kpai1\\Documents\\GitHub\\Microservices\\Mango\\",
-  "Documents": [],
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{F42BBEF9-A345-4C96-A045-8595BE527A0E}|Mango.Services.CouponAPI\\Mango.Services.CouponAPI.csproj|c:\\users\\kpai1\\documents\\github\\microservices\\mango\\mango.services.couponapi\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}",
+      "RelativeMoniker": "D:0:0:{F42BBEF9-A345-4C96-A045-8595BE527A0E}|Mango.Services.CouponAPI\\Mango.Services.CouponAPI.csproj|solutionrelative:mango.services.couponapi\\properties\\launchsettings.json||{90A6B3A7-C1A3-4009-A288-E2FF89E96FA0}"
+    }
+  ],
   "DocumentGroupContainers": [
     {
       "Orientation": 0,
@@ -9,7 +14,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": -1,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -22,6 +27,19 @@
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "launchSettings.json",
+              "DocumentMoniker": "C:\\Users\\kpai1\\Documents\\GitHub\\Microservices\\Mango\\Mango.Services.CouponAPI\\Properties\\launchSettings.json",
+              "RelativeDocumentMoniker": "Mango.Services.CouponAPI\\Properties\\launchSettings.json",
+              "ToolTip": "C:\\Users\\kpai1\\Documents\\GitHub\\Microservices\\Mango\\Mango.Services.CouponAPI\\Properties\\launchSettings.json",
+              "RelativeToolTip": "Mango.Services.CouponAPI\\Properties\\launchSettings.json",
+              "ViewState": "AQIAAAkAAAAAAAAAAAAAABoAAAAvAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001642|",
+              "WhenOpened": "2024-09-10T17:32:40.722Z",
+              "EditorCaption": ""
             }
           ]
         }
