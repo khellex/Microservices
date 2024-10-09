@@ -24,7 +24,6 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
-
 app.MapControllers();
 
 //this method is used to check for any pending migrations and execute them
