@@ -1,4 +1,7 @@
-﻿namespace Mango.Services.CouponAPI.Models.DTO
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Mango.Services.CouponAPI.Models.DTO
 {
     public class CouponDTO
     {
