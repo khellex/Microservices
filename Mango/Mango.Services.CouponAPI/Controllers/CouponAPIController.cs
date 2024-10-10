@@ -15,12 +15,14 @@ namespace Mango.Services.CouponAPI.Controllers
         private readonly ApplicationDbContext _db;
         private ResponseDTO _response;
         private IMapper _mapper;
+        private ILogger<CouponAPIController> _logger;
 
-        public CouponAPIController(ApplicationDbContext dbContext, IMapper mapper)
+        public CouponAPIController(ApplicationDbContext dbContext, IMapper mapper, ILogger<CouponAPIController> logger)
         {
             _db = dbContext;
             _mapper = mapper;
             _response = new ResponseDTO();
+            _logger = logger;
         }
         /// <summary>
         /// GETs full list of coupons available in system
@@ -40,6 +42,7 @@ namespace Mango.Services.CouponAPI.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "An error occurred while processing the request.");
                 _response.IsSuccess = false;
                 _response.Message = ex.Message;
             }
@@ -65,6 +68,7 @@ namespace Mango.Services.CouponAPI.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "An error occurred while processing the request.");
                 _response.IsSuccess = false;
                 _response.Message = ex.Message;
             }
@@ -89,6 +93,7 @@ namespace Mango.Services.CouponAPI.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "An error occurred while processing the request.");
                 _response.IsSuccess = false;
                 _response.Message = ex.Message;
             }
@@ -110,6 +115,7 @@ namespace Mango.Services.CouponAPI.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "An error occurred while processing the request.");
                 _response.IsSuccess = false;
                 _response.Message = ex.Message;
             }
@@ -132,6 +138,7 @@ namespace Mango.Services.CouponAPI.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "An error occurred while processing the request.");
                 _response.IsSuccess = false;
                 _response.Message = ex.Message;
             }
@@ -161,6 +168,7 @@ namespace Mango.Services.CouponAPI.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "An error occurred while processing the request.");
                 _response.IsSuccess = false;
                 _response.Message = ex.Message;
             }
