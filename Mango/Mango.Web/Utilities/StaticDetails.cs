@@ -2,6 +2,7 @@
 {
     public class StaticDetails
     {
+        public static string ApibaseURL { get; set; }
         public enum ApiType
         {
             GET,
