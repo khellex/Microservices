@@ -7,7 +7,7 @@ namespace Mango.Web.Models
     /// All the requested data from this DTO will have
     /// the following request layout
     /// </summary>
-    public class RequestDTO
+    public class RequestDto
     {
         public ApiType ApiType { get; set; } = ApiType.GET;
         public string Url { get; set; }

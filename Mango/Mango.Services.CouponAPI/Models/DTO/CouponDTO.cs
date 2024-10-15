@@ -1,9 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Mango.Services.CouponAPI.Models.DTO
+namespace Mango.Services.CouponAPI.Models.Dto
 {
-    public class CouponDTO
+    public class CouponDto
     {
         public int CouponId { get; set; }
         public string CouponCode { get; set; }

@@ -16,8 +16,8 @@ namespace Mango.Services.CouponAPI
         public static MapperConfiguration RegisterMaps() { 
             var mappingConfig = new MapperConfiguration(config =>
             {
-                config.CreateMap<CouponDTO, Coupon>();
-                config.CreateMap<Coupon, CouponDTO>();
+                config.CreateMap<CouponDto, Coupon>();
+                config.CreateMap<Coupon, CouponDto>();
             });
             return mappingConfig;
         }

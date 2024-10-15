@@ -3,7 +3,7 @@
     /// <summary>
     /// This is a response DTO based in the web project 
     /// </summary>
-    public class ResponseDTO
+    public class ResponseDto
     {
         public object? Result { get; set; }
         public bool IsSuccess { get; set; } = true;

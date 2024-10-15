@@ -22,12 +22,12 @@ namespace Mango.Web.Controllers
         /// <returns></returns>
         public async Task<IActionResult> CouponIndex()
         {
-            List<CouponDTO> coupons = new();
+            List<CouponDto> coupons = new();
 
-            ResponseDTO? response = await _couponService.GetAllCouponsAsync();
+            ResponseDto? response = await _couponService.GetAllCouponsAsync();
             if (response != null && response.IsSuccess)
             {
-                coupons = JsonConvert.DeserializeObject<List<CouponDTO>>(Convert.ToString(response.Result));
+                coupons = JsonConvert.DeserializeObject<List<CouponDto>>(Convert.ToString(response.Result));
             }
             TempData["information"] = "Coupon list loaded successfully!";
             return View(coupons);
@@ -44,14 +44,14 @@ namespace Mango.Web.Controllers
         /// Used to create new coupon by calling the 
         /// CreateCouponsAsync() api endpoint
         /// </summary>
-        /// <param name="couponDTO"></param>
+        /// <param name="CouponDto"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<IActionResult> CreateCoupon(CouponDTO couponDTO)
+        public async Task<IActionResult> CreateCoupon(CouponDto CouponDto)
         {
             if (ModelState.IsValid)
             {
-                ResponseDTO? response = await _couponService.CreateCouponsAsync(couponDTO);
+                ResponseDto? response = await _couponService.CreateCouponsAsync(CouponDto);
 
                 if (response != null && response.IsSuccess)
                 {
@@ -61,7 +61,7 @@ namespace Mango.Web.Controllers
                 }
             }
             TempData["error"] = "Something went wrong";
-            return View(couponDTO);
+            return View(CouponDto);
         }
         /// <summary>
         /// Used to load the initial Delete coupon page
@@ -70,10 +70,10 @@ namespace Mango.Web.Controllers
         /// <returns></returns>
         public async Task<IActionResult> DeleteCoupon(int couponId)
         {
-            ResponseDTO? response = await _couponService.GetCouponByIdAsync(couponId);
+            ResponseDto? response = await _couponService.GetCouponByIdAsync(couponId);
             if (response != null && response.IsSuccess)
             {
-                CouponDTO? coupon = JsonConvert.DeserializeObject<CouponDTO>(Convert.ToString(response.Result));
+                CouponDto? coupon = JsonConvert.DeserializeObject<CouponDto>(Convert.ToString(response.Result));
                 TempData["information"] = "Page loaded Successfully";
                 return View(coupon);
             }
@@ -85,21 +85,21 @@ namespace Mango.Web.Controllers
         /// DeleteCouponsAsync() api endpoint and then redirect
         /// the page to the Coupon index page.
         /// </summary>
-        /// <param name="couponDTO"></param>
+        /// <param name="CouponDto"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<IActionResult> DeleteCoupon(CouponDTO couponDTO)
+        public async Task<IActionResult> DeleteCoupon(CouponDto CouponDto)
         {
-            var deleteCoupon = await _couponService.DeleteCouponsAsync(couponDTO.CouponId);
+            var deleteCoupon = await _couponService.DeleteCouponsAsync(CouponDto.CouponId);
 
-            ResponseDTO? response = await _couponService.GetAllCouponsAsync();
+            ResponseDto? response = await _couponService.GetAllCouponsAsync();
 
             if (deleteCoupon != null && deleteCoupon.IsSuccess)
             {
                 TempData["success"] = "Coupon Deleted Successfully";
                 return RedirectToAction(nameof(CouponIndex), response);
             }
-            return RedirectToAction(nameof(DeleteCoupon), couponDTO.CouponId );
+            return RedirectToAction(nameof(DeleteCoupon), CouponDto.CouponId );
         }
         #endregion
     }

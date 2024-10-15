@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using Mango.Services.CouponAPI.Data;
 using Mango.Services.CouponAPI.Models;
-using Mango.Services.CouponAPI.Models.DTO;
+using Mango.Services.CouponAPI.Models.Dto;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +13,7 @@ namespace Mango.Services.CouponAPI.Controllers
     public class CouponAPIController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
-        private ResponseDTO _response;
+        private ResponseDto _response;
         private IMapper _mapper;
         private ILogger<CouponAPIController> _logger;
 
@@ -21,7 +21,7 @@ namespace Mango.Services.CouponAPI.Controllers
         {
             _db = dbContext;
             _mapper = mapper;
-            _response = new ResponseDTO();
+            _response = new ResponseDto();
             _logger = logger;
         }
         /// <summary>
@@ -31,14 +31,14 @@ namespace Mango.Services.CouponAPI.Controllers
         /// Full coupon object
         /// </returns>
         [HttpGet]
-        public ResponseDTO Get() {
+        public ResponseDto Get() {
             try
             {
                 IEnumerable<Coupon> objListOfCoupons = _db.Coupons.ToList();
 
                 //we use the response model as the output for the endpoint and
                 //pass the data to the automapper to map the coupon model to the coupon dto
-                _response.Result = _mapper.Map<IEnumerable<CouponDTO>>(objListOfCoupons);
+                _response.Result = _mapper.Map<IEnumerable<CouponDto>>(objListOfCoupons);
             }
             catch (Exception ex)
             {
@@ -55,7 +55,7 @@ namespace Mango.Services.CouponAPI.Controllers
         /// <returns>Coupon object based on the supplied couponID</returns>
         [HttpGet()]
         [Route("{id:int}")]
-        public async Task<ResponseDTO> Get(int id)
+        public async Task<ResponseDto> Get(int id)
         {
             try
             {
@@ -64,7 +64,7 @@ namespace Mango.Services.CouponAPI.Controllers
                 {
                     _response.IsSuccess = false;
                 }
-                _response.Result = _mapper.Map<CouponDTO>(couponFromDb);
+                _response.Result = _mapper.Map<CouponDto>(couponFromDb);
             }
             catch (Exception ex)
             {
@@ -80,7 +80,7 @@ namespace Mango.Services.CouponAPI.Controllers
         /// <param name="code"></param>
         /// <returns>Coupon object based on the supplied coupon code</returns>
         [HttpGet("GetByCode/{code}")]
-        public async Task<ResponseDTO> GetByCode(string code)
+        public async Task<ResponseDto> GetByCode(string code)
         {
             try
             {
@@ -89,7 +89,7 @@ namespace Mango.Services.CouponAPI.Controllers
                 {
                     _response.IsSuccess = false;
                 }
-                _response.Result = _mapper.Map<CouponDTO>(couponFromDb);
+                _response.Result = _mapper.Map<CouponDto>(couponFromDb);
             }
             catch (Exception ex)
             {
@@ -105,7 +105,7 @@ namespace Mango.Services.CouponAPI.Controllers
         /// <param name="couponDTO"></param>
         /// <returns></returns>
         [HttpPost]
-        public async Task<ResponseDTO> Post([FromBody] CouponDTO couponDTO)
+        public async Task<ResponseDto> Post([FromBody] CouponDto couponDTO)
         {
             try
             {
@@ -127,14 +127,14 @@ namespace Mango.Services.CouponAPI.Controllers
         /// <param name="couponDTO"></param>
         /// <returns>Updated coupon object</returns>
         [HttpPut]
-        public async Task<ResponseDTO> Put([FromBody] CouponDTO couponDTO)
+        public async Task<ResponseDto> Put([FromBody] CouponDto couponDTO)
         {
             try
             {
                 Coupon coupon = _mapper.Map<Coupon>(couponDTO);
                 _db.Coupons.Update(coupon);
                 await _db.SaveChangesAsync();
-                _response.Result = _mapper.Map<CouponDTO>(coupon);
+                _response.Result = _mapper.Map<CouponDto>(coupon);
             }
             catch (Exception ex)
             {
@@ -150,7 +150,7 @@ namespace Mango.Services.CouponAPI.Controllers
         /// <param name="id"></param>
         /// <returns>Removes the entry from db</returns>
         [HttpDelete("{id}")]
-        public async Task<ResponseDTO> Delete(int id)
+        public async Task<ResponseDto> Delete(int id)
         {
             try
             {
@@ -159,7 +159,7 @@ namespace Mango.Services.CouponAPI.Controllers
                 {
                     _db.Coupons.Remove(couponFromDb);
                     await _db.SaveChangesAsync();
-                    _response.Result = _mapper.Map<CouponDTO>(couponFromDb);
+                    _response.Result = _mapper.Map<CouponDto>(couponFromDb);
                 }
                 else
                 {

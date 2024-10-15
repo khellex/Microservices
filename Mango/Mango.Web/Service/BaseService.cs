@@ -19,7 +19,7 @@ namespace Mango.Web.Service
         {
             _httpClientFactory = httpClientFactory;
         }
-        public async Task<ResponseDTO?> SendAsync(RequestDTO requestDTO)
+        public async Task<ResponseDto?> SendAsync(RequestDto RequestDto)
         {
             try
             {
@@ -34,19 +34,19 @@ namespace Mango.Web.Service
 
                     //this is used to build the request uri
                     //(the endpoint that will be executed to fulfill the request)
-                    message.RequestUri = new Uri(requestDTO.Url);
+                    message.RequestUri = new Uri(RequestDto.Url);
 
                     //this is for the content data for POST or the PUT request that we make
-                    if (requestDTO.Data != null)
+                    if (RequestDto.Data != null)
                     {
-                        message.Content = new StringContent(JsonConvert.SerializeObject(requestDTO.Data), Encoding.UTF8, "application/json");
+                        message.Content = new StringContent(JsonConvert.SerializeObject(RequestDto.Data), Encoding.UTF8, "application/json");
                     }
 
-                    //we receive the response from the responseDTO that we have set up
+                    //we receive the response from the ResponseDto that we have set up
                     HttpResponseMessage? apiResponse = null;
 
                     //based on the endpoint type, we will apply the request method type
-                    switch (requestDTO.ApiType)
+                    switch (RequestDto.ApiType)
                     {
                         case ApiType.POST:
                             message.Method = HttpMethod.Post;
@@ -81,14 +81,14 @@ namespace Mango.Web.Service
 
                         default:
                             var apiContent = await apiResponse.Content.ReadAsStringAsync();
-                            var apiResponseDTO = JsonConvert.DeserializeObject<ResponseDTO>(apiContent);
-                            return apiResponseDTO;
+                            var apiResponseDto = JsonConvert.DeserializeObject<ResponseDto>(apiContent);
+                            return apiResponseDto;
                     }
                 }
             }
             catch (Exception ex)
             {
-                var apiResponse = new ResponseDTO()
+                var apiResponse = new ResponseDto()
                 {
                     IsSuccess = false,
                     Message = ex.Message.ToString(),
