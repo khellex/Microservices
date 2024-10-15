@@ -61,6 +61,12 @@ void ApplyPendingMigrations()
     using (var scope = app.Services.CreateScope())
     {
         var _db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        //this line can be used to check for the initial setup
+        //where if the db is not present then the db is first created
+        //and then the table structure is added
+        _db.Database.EnsureCreated();
+
         if (_db.Database.GetPendingMigrations().Count() > 0)
         {
             _db.Database.Migrate();
