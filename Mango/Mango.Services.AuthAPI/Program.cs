@@ -58,7 +58,7 @@ void ApplyPendingMigrations()
         //IF YOU ARE RUNNING THE SCRIPT FOR THE FIRST TIME
         _db.Database.EnsureCreated();
 
-        if (_db.Database.GetPendingMigrations().Count() > 0)
+        if (_db.Database.GetPendingMigrations().Any())
         {
             _db.Database.Migrate();
         }
