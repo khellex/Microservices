@@ -149,7 +149,7 @@ namespace Mango.Services.CouponAPI.Controllers
         /// </summary>
         /// <param name="id"></param>
         /// <returns>Removes the entry from db</returns>
-        [HttpDelete]
+        [HttpDelete("{id}")]
         public async Task<ResponseDTO> Delete(int id)
         {
             try

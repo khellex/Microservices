@@ -29,7 +29,7 @@ namespace Mango.Web.Service
             return (await _baseService.SendAsync(new RequestDTO() 
             {
                 ApiType = ApiType.DELETE,
-                Url = ApibaseURL + "/api/Coupon?" + id
+                Url = ApibaseURL + "/api/Coupon/" + id
             }));
         }
 
@@ -56,7 +56,7 @@ namespace Mango.Web.Service
             return (await _baseService.SendAsync(new RequestDTO()
             {
                 ApiType = ApiType.GET,
-                Url = ApibaseURL + "/api/Coupon?" + id
+                Url = ApibaseURL + "/api/Coupon/" + id
             }));
         }
 
