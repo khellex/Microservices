@@ -1,5 +1,7 @@
 using Mango.Services.AuthAPI.Data;
 using Mango.Services.AuthAPI.Models;
+using Mango.Services.AuthAPI.Service;
+using Mango.Services.AuthAPI.Service.IService;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,6 +9,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 //added the AppDbContext DI to the container
 builder.Services.AddDbContext<ApplicationDbContext>(option => option.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+//adding the JWT tokenization to the DI pipeline using the config set in the AppSettings
+builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("ApiSettings:JwtOptions"));
 
 //set up Identity services for user authentication and authorization
 //AddIdentity<IdentityUser, IdentityRole>() : allows you to manage user accounts, passwords, roles, and other identity-related tasks.
@@ -16,6 +21,10 @@ builder.Services.AddDbContext<ApplicationDbContext>(option => option.UseSqlServe
 // - Password reset tokens
 // - Two-factor authentication tokens
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>().AddEntityFrameworkStores<ApplicationDbContext>().AddDefaultTokenProviders();
+
+//adding the Auth, Jwt generator interface to the DI pipeline
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IJwtGenerator, JwtGenerator>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
