@@ -20,9 +20,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Build configuration from appsettings.json
-var configuration = new ConfigurationBuilder()
-    .AddJsonFile("appsettings.json")
-    .Build();
+var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
 
 // Set up Serilog using configuration from appsettings.json
 Log.Logger = new LoggerConfiguration()
