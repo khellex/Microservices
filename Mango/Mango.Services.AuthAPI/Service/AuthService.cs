@@ -4,6 +4,7 @@ using Mango.Services.AuthAPI.Models.Dto;
 using Mango.Services.AuthAPI.Service.IService;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Mango.Services.AuthAPI.Service
@@ -31,6 +32,43 @@ namespace Mango.Services.AuthAPI.Service
             _jwtGenerator = jwtGenerator;
         }
         /// <summary>
+        /// Can be used to assign a new role to a user,
+        /// checks if the assigned role previously existed
+        /// in the db, if not adds the role first and then
+        /// assigns to the user and adds to the userRole table
+        /// </summary>
+        /// <param name="email"></param>
+        /// <param name="roleName"></param>
+        /// <returns>Bool value, if the role assigning is true or false</returns>
+        public async Task<bool> AssignRole(string email, string roleName)
+        {
+            var user = await _db.ApplicationUsers.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+
+            //if the user email does not exist, we will return false
+            if (user == null) return false;
+
+            //if the user email exists, we check for the role, if it doesn't exist
+            if (!await _roleManager.RoleExistsAsync(roleName))
+            {
+                //create new role if it does not exist
+                var createRole = await _roleManager.CreateAsync(new IdentityRole(roleName));
+                if (!createRole.Succeeded)
+                {
+                    // if role creation fails
+                    return false;
+                }
+            }
+            //if role was successfully created, add it to the UserRole table
+            var addToUserRole = await _userManager.AddToRoleAsync(user, roleName);
+            if (!addToUserRole.Succeeded)
+            {
+                // if adding role to user role table fails
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>
         /// This service checks if the username exists in our application
         /// and then validates the input password, if the user exists and
         /// the password is valid, we will generate the user details and the JWT
@@ -43,7 +81,7 @@ namespace Mango.Services.AuthAPI.Service
 
             try
             {
-                var user = _db.ApplicationUsers.FirstOrDefault(u => u.UserName.ToLower() == loginRequestDto.Username.ToLower());
+                var user = await _db.ApplicationUsers.FirstOrDefaultAsync(u => u.UserName.ToLower() == loginRequestDto.Username.ToLower());
                 bool validUserPassword = await _userManager.CheckPasswordAsync(user, loginRequestDto.Password);
 
                 //this means the user data is available and the password is verified
