@@ -11,12 +11,16 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 builder.Services.AddHttpClient<ICouponService, CouponService>();
+builder.Services.AddHttpClient<IAuthService, AuthService>();
 
-//assigns the couponAPI base URL
-StaticDetails.ApibaseURL = builder.Configuration["ServiceUrls:CouponAPI"];
+//assigns the couponAPI, AuthApi base URL
+StaticDetails.CouponApiBaseURL = builder.Configuration["ServiceUrls:CouponAPI"];
+StaticDetails.AuthApiBaseURL = builder.Configuration["ServiceUrls:AuthAPI"];
 
-//adding the ICouponService and IBaseService interface to the DI pipeline
+//adding the ICouponService,IAuthService
+//and IBaseService interface to the DI pipeline
 builder.Services.AddScoped<ICouponService, CouponService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IBaseService, BaseService>();
 
 var app = builder.Build();

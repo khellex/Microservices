@@ -2,7 +2,11 @@
 {
     public class StaticDetails
     {
-        public static string ApibaseURL { get; set; }
+        //the base URLs of each service is different,
+        //hence we need to configure the base URLs in
+        //the web project separately
+        public static string CouponApiBaseURL { get; set; }
+        public static string AuthApiBaseURL { get; set; }
         public enum ApiType
         {
             GET,
