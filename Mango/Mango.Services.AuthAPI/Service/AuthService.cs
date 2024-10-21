@@ -85,7 +85,7 @@ namespace Mango.Services.AuthAPI.Service
                 bool validUserPassword = await _userManager.CheckPasswordAsync(user, loginRequestDto.Password);
 
                 //this means the user data is available and the password is verified
-                if (user != null || validUserPassword)
+                if (user != null && validUserPassword)
                 {
                     loginResponse.User = new UserDto
                     {
