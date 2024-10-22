@@ -108,6 +108,7 @@ namespace Mango.Services.CouponAPI.Controllers
         /// <param name="couponDTO"></param>
         /// <returns></returns>
         [HttpPost]
+        [Authorize(Roles ="Admin")]
         public async Task<ResponseDto> Post([FromBody] CouponDto couponDTO)
         {
             try
@@ -131,6 +132,7 @@ namespace Mango.Services.CouponAPI.Controllers
         /// <param name="couponDTO"></param>
         /// <returns>Updated coupon object</returns>
         [HttpPut]
+        [Authorize(Roles = "Admin")]
         public async Task<ResponseDto> Put([FromBody] CouponDto couponDTO)
         {
             try
@@ -155,6 +157,7 @@ namespace Mango.Services.CouponAPI.Controllers
         /// <param name="id"></param>
         /// <returns>Removes the entry from db</returns>
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<ResponseDto> Delete(int id)
         {
             try
