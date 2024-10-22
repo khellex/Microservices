@@ -94,8 +94,12 @@ namespace Mango.Services.AuthAPI.Service
                         Email = user.Email,
                         PhoneNumber = user.PhoneNumber
                     };
+
+                    //fetching the user roles to pass it to the claims
+                    var userRoles = await _userManager.GetRolesAsync(user);
+
                     //JWT generator
-                    loginResponse.Token = _jwtGenerator.GenerateToken(user);
+                    loginResponse.Token = _jwtGenerator.GenerateToken(user, userRoles);
                 }
                 else
                 {

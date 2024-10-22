@@ -17,7 +17,7 @@ namespace Mango.Services.AuthAPI.Service
         {
             _jwtOptions = jwtOptions?.Value ?? throw new ArgumentNullException(nameof(jwtOptions));
         }
-        public string GenerateToken(ApplicationUser applicationUser)
+        public string GenerateToken(ApplicationUser applicationUser, IEnumerable<string> roles)
         {
             JwtSecurityTokenHandler tokenHandler = new();
 
@@ -33,11 +33,11 @@ namespace Mango.Services.AuthAPI.Service
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };
 
-            // Optionally add role claims if needed
-            //if (applicationUser.Roles != null)
-            //{
-            //    claims.AddRange(applicationUser.Roles.Select(role => new Claim(ClaimTypes.Role, role)));
-            //}
+            // adding roles to the claims
+            if (roles != null)
+            {
+                claimList.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+            }
 
             // Token descriptor with audience, issuer,
             // subject, expiry duration, expiration and signing credentials
