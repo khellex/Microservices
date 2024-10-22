@@ -2,6 +2,7 @@
 using Mango.Services.CouponAPI.Data;
 using Mango.Services.CouponAPI.Models;
 using Mango.Services.CouponAPI.Models.Dto;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -10,6 +11,7 @@ namespace Mango.Services.CouponAPI.Controllers
 {
     [Route("api/coupon")]
     [ApiController]
+    [Authorize]
     public class CouponAPIController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -63,6 +65,7 @@ namespace Mango.Services.CouponAPI.Controllers
                 if (couponFromDb == null)
                 {
                     _response.IsSuccess = false;
+                    _response.Message = "Something went wrong";
                 }
                 _response.Result = _mapper.Map<CouponDto>(couponFromDb);
             }
@@ -112,6 +115,7 @@ namespace Mango.Services.CouponAPI.Controllers
                 Coupon coupon = _mapper.Map<Coupon>(couponDTO);
                 await _db.Coupons.AddAsync(coupon);
                 await _db.SaveChangesAsync();
+                _response.Message = "Coupon created successfully";
             }
             catch (Exception ex)
             {
@@ -135,6 +139,7 @@ namespace Mango.Services.CouponAPI.Controllers
                 _db.Coupons.Update(coupon);
                 await _db.SaveChangesAsync();
                 _response.Result = _mapper.Map<CouponDto>(coupon);
+                _response.Message = "Coupon updated successfully.";
             }
             catch (Exception ex)
             {
@@ -160,6 +165,7 @@ namespace Mango.Services.CouponAPI.Controllers
                     _db.Coupons.Remove(couponFromDb);
                     await _db.SaveChangesAsync();
                     _response.Result = _mapper.Map<CouponDto>(couponFromDb);
+                    _response.Message = "Coupon deleted successfully.";
                 }
                 else
                 {

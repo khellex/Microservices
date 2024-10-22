@@ -1,6 +1,7 @@
 ﻿using Mango.Web.Models;
 using Mango.Web.Service;
 using Mango.Web.Service.IService;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 
@@ -29,7 +30,10 @@ namespace Mango.Web.Controllers
             {
                 coupons = JsonConvert.DeserializeObject<List<CouponDto>>(Convert.ToString(response.Result));
             }
-            TempData["information"] = "Coupon list loaded successfully!";
+            else
+            {
+                TempData["error"] = response.Message;
+            }
             return View(coupons);
         }
         /// <summary>

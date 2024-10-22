@@ -37,6 +37,7 @@ namespace Mango.Services.AuthAPI.Controllers
             }
             else
             {
+                _response.Message = response.Message;
                 return Ok(_response);
             }
         }

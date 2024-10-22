@@ -28,6 +28,7 @@ namespace Mango.Web.Controllers
             _tokenProvider = tokenProvider; 
             _contextAccessor = contextAccessor;
         }
+        #region Log in
         /// <summary>
         /// Loads the view for the login page
         /// </summary>
@@ -54,18 +55,23 @@ namespace Mango.Web.Controllers
             {
                 LoginResponseDto? loginResponseDto = JsonConvert.DeserializeObject<LoginResponseDto>(Convert.ToString(responseDto.Result));
 
+                //setting the sign-in session for the logged in user
                 await SignInUser(loginResponseDto);
 
+                //setting the session token cookie for the sign-ed in user
                 _tokenProvider.SetToken(loginResponseDto.Token);
-                TempData["success"] = "User logged in successfully.";
+
+                TempData["success"] = responseDto.Message;
                 return RedirectToAction("Index", "Home");
             }
             else
             {
-                ModelState.AddModelError("CustomError", responseDto.Message);
+                TempData["error"] = responseDto?.Message;
                 return View(loginRequestDto);
             }
         }
+        #endregion
+        #region Registration
         /// <summary>
         /// Loads the user registration page with the role dropdown
         /// </summary>
@@ -106,11 +112,14 @@ namespace Mango.Web.Controllers
                 ResponseDto? assignRole = await _authService.AssignRoleAsync(registrationRequestDto);
                 if (assignRole != null && assignRole.IsSuccess)
                 {
-                    TempData["success"] = "User registered successfully.";
+                    TempData["success"] = result?.Message;
                     return RedirectToAction(nameof(Login));
                 }
             }
-
+            else
+            {
+                TempData["error"] = result?.Message;
+            }
             //the registration was unsuccessful, then the registration page is reloaded with the following details
             List<SelectListItem> roleList = new()
             {
@@ -120,12 +129,25 @@ namespace Mango.Web.Controllers
             ViewBag.RoleList = roleList;
             return View(registrationRequestDto);
         }
+        #endregion
+        #region Log out
+        /// <summary>
+        /// Logs out the user and clears their session token cookie
+        /// </summary>
+        /// <returns></returns>
         public async Task<IActionResult> Logout()
         {
+            //signs out the user
             await _contextAccessor.HttpContext.SignOutAsync();
+
+            //clears the token session cookie
             _tokenProvider.ClearToken();
+
+            TempData["success"] = "Successfully logged out";
             return RedirectToAction("Index","Home");
         }
+        #endregion
+        #region Sign in 
         private async Task SignInUser(LoginResponseDto loginResponseDto)
         {
             var handler = new JwtSecurityTokenHandler();
@@ -138,10 +160,15 @@ namespace Mango.Web.Controllers
             identity.AddClaim(new Claim(JwtRegisteredClaimNames.Sub, jwt.Claims.FirstOrDefault(j => j.Type == JwtRegisteredClaimNames.Sub).Value));
             identity.AddClaim(new Claim(JwtRegisteredClaimNames.Name, jwt.Claims.FirstOrDefault(j => j.Type == JwtRegisteredClaimNames.Name).Value));
             identity.AddClaim(new Claim(JwtRegisteredClaimNames.Jti, jwt.Claims.FirstOrDefault(j => j.Type == JwtRegisteredClaimNames.Jti).Value));
+
+            //this is the built-in identity claims which will utilise the the logged in users name and role
             identity.AddClaim(new Claim(ClaimTypes.Name, jwt.Claims.FirstOrDefault(j => j.Type == JwtRegisteredClaimNames.Email).Value));
+            identity.AddClaim(new Claim(ClaimTypes.Role, jwt.Claims.FirstOrDefault(j => j.Type == "role").Value));
 
             var principal = new ClaimsPrincipal(identity);
+
             await _contextAccessor.HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
         }
+        #endregion
     }
 }
