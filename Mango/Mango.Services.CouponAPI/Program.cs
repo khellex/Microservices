@@ -7,6 +7,7 @@ using Serilog;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Mango.Services.CouponAPI.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,33 +64,10 @@ Log.Logger = new LoggerConfiguration()
 // Replace default .NET logging with Serilog
 builder.Host.UseSerilog();
 
-//adding the authentication to the DI pipeline
-var apiConfig = builder.Configuration.GetSection("ApiSettings");
+//added the Authentication logic to
+//this extension to clean up the program.cs 
+builder.AddAppAuthentication();
 
-var secret = apiConfig.GetValue<string>("Secret");
-var issuer = apiConfig.GetValue<string>("Issuer");
-var audience = apiConfig.GetValue<string>("Audience");
-
-var key = Encoding.ASCII.GetBytes(secret);
-
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(x =>
-{
-    x.TokenValidationParameters = new TokenValidationParameters
-    {
-        ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(key),
-        ValidateIssuer = true,
-        ValidIssuer = issuer,
-        ValidateAudience = true,
-        ValidAudience = audience,
-        ValidateLifetime = true, // Ensures token hasn't expired
-        ClockSkew = TimeSpan.Zero  // Optional: removes the default 5 minutes clock skew
-    };
-});
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
