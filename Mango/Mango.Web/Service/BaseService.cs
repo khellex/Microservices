@@ -14,12 +14,14 @@ namespace Mango.Web.Service
         /// responses from a resource, such as a web API.
         /// </summary>
         private readonly IHttpClientFactory _httpClientFactory;
+        private readonly ITokenProvider _tokenProvider;
 
-        public BaseService(IHttpClientFactory httpClientFactory)
+        public BaseService(IHttpClientFactory httpClientFactory, ITokenProvider tokenProvider)
         {
             _httpClientFactory = httpClientFactory;
+            _tokenProvider = tokenProvider;
         }
-        public async Task<ResponseDto?> SendAsync(RequestDto RequestDto)
+        public async Task<ResponseDto?> SendAsync(RequestDto RequestDto, bool withBearer = true)
         {
             try
             {
@@ -30,7 +32,13 @@ namespace Mango.Web.Service
                 {
                     //this header specifies to the endpoint that we will accept application/json content-type
                     message.Headers.Add("Accept", "application/json");
-                    //add token part here later
+
+                    //Sending the Bearer token to the API
+                    if (withBearer)
+                    {
+                        var token = _tokenProvider.GetToken();
+                        message.Headers.Add("Authorization", $"Bearer {token}");
+                    }
 
                     //this is used to build the request uri
                     //(the endpoint that will be executed to fulfill the request)
