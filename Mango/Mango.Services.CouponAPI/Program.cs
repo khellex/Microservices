@@ -3,9 +3,6 @@ using Mango.Services.CouponAPI;
 using Mango.Services.CouponAPI.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Serilog;
-using System.Text;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Mango.Services.CouponAPI.Extensions;
 
@@ -49,20 +46,9 @@ builder.Services.AddSwaggerGen(option =>
     });
 });
 
-// Build configuration from appsettings.json
-var configuration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
-
-// Set up Serilog using configuration from appsettings.json
-Log.Logger = new LoggerConfiguration()
-    .ReadFrom.Configuration(configuration)
-    .Enrich.FromLogContext()
-    .Enrich.WithMachineName()
-    .Enrich.WithThreadId()
-    //.WriteTo.Console() // Optional: Log to console
-    .CreateLogger();
-
-// Replace default .NET logging with Serilog
-builder.Host.UseSerilog();
+//added the Serilog logic to
+//this extension to clean up the program.cs
+builder.SerilogLogging();
 
 //added the Authentication logic to
 //this extension to clean up the program.cs 
