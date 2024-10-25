@@ -80,7 +80,7 @@ namespace Mango.Web.Controllers
                 ProductDto? product = JsonConvert.DeserializeObject<ProductDto>(Convert.ToString(response.Result));
                 return View(product);
             }
-            TempData["error"] = "Something went wrong";
+            TempData["error"] = response.Message;
             return NotFound();
         }
         /// <summary>
@@ -102,6 +102,7 @@ namespace Mango.Web.Controllers
                 TempData["success"] = deleteProduct.Message;
                 return RedirectToAction(nameof(ProductIndex), response);
             }
+            TempData["error"] = deleteProduct.Message;
             return RedirectToAction(nameof(DeleteProduct), productDto.ProductId);
         }
         /// <summary>
@@ -137,7 +138,8 @@ namespace Mango.Web.Controllers
                 TempData["success"] = editProduct.Message;
                 return RedirectToAction(nameof(ProductIndex), response);
             }
-            return RedirectToAction(nameof(EditProduct), productDto.ProductId);
+            TempData["error"] = editProduct.Message;
+            return RedirectToAction(nameof(EditProduct), new { productId = productDto.ProductId });
         }
         #endregion
     }
