@@ -2,7 +2,7 @@
 using Mango.Services.ProductAPI.Models;
 using Mango.Services.ProductAPI.Models.Dto;
 
-namespace Mango.Services.CouponAPI
+namespace Mango.Services.ProductAPI
 {
     /// <summary>
     /// This is the config setup for the Auto mapper,
@@ -17,8 +17,9 @@ namespace Mango.Services.CouponAPI
         {
             var mappingConfig = new MapperConfiguration(config =>
             {
-                config.CreateMap<ProductDto, Product>();
-                config.CreateMap<Product, ProductDto>();
+                //CreateMap, maps ProductDto to Product
+                //Instead of writing the other way round, we can use ReverseMap()
+                config.CreateMap<ProductDto, Product>().ReverseMap();
             });
             return mappingConfig;
         }
