@@ -2,10 +2,8 @@
 using Mango.Services.ShoppingCartAPI.Data;
 using Mango.Services.ShoppingCartAPI.Models;
 using Mango.Services.ShoppingCartAPI.Models.Dto;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection.PortableExecutable;
 
 namespace Mango.Services.ShoppingCartAPI.Controllers
 {
@@ -77,6 +75,44 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
                     _response.Message = "Cart updated successfully.";
                 }
                 _response.Result = cartDto;
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.Message = ex.Message;
+            }
+            return _response;
+        }
+        [HttpPost("RemoveCart")]
+        public async Task<ResponseDto> RemoveCart([FromBody] int cartDetailsID)
+        {
+            try
+            {
+                CartDetails? cartDetails = await _db.CartDetails.FirstOrDefaultAsync(d => d.CartDetailsId == cartDetailsID);
+                if (cartDetails != null)
+                {
+                    var totalCountOfCartItem = await _db.CartDetails.CountAsync(d => d.CartHeaderId == cartDetails.CartHeaderId);
+                    if (totalCountOfCartItem == 1)
+                    {
+                        //delete the cart details as well as the header
+                        var cartHeaderFromDb = await _db.CartHeaders.FirstOrDefaultAsync(h => h.CartHeaderId == cartDetails.CartHeaderId);
+                        if (cartHeaderFromDb != null)
+                        {
+                            _db.CartHeaders.Remove(cartHeaderFromDb);
+                        }
+                    }
+                    _db.CartDetails.Remove(cartDetails);
+                    await _db.SaveChangesAsync();
+
+                    _response.Result = true;
+                    _response.Message = "Cart deleted successfully.";
+                }
+                else
+                {
+                    _response.IsSuccess = false;
+                    _response.Message = "No entries to be deleted.";
+                }
+                return _response;
             }
             catch (Exception ex)
             {
