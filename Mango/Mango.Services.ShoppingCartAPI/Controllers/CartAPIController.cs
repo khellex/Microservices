@@ -2,6 +2,7 @@
 using Mango.Services.ShoppingCartAPI.Data;
 using Mango.Services.ShoppingCartAPI.Models;
 using Mango.Services.ShoppingCartAPI.Models.Dto;
+using Mango.Services.ShoppingCartAPI.Service.IService;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,13 +16,15 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
         private ResponseDto _response;
         private IMapper _mapper;
         private ILogger<CartAPIController> _logger;
+        private readonly IProductService _productService;
 
-        public CartAPIController(ApplicationDbContext db, IMapper mapper, ILogger<CartAPIController> logger)
+        public CartAPIController(ApplicationDbContext db, IMapper mapper, ILogger<CartAPIController> logger, IProductService productService)
         {
             _db = db;
             _mapper = mapper;
             _logger = logger;
             _response = new();
+            _productService = productService;
         }
         /// <summary>
         /// Controller method to add/edit Shopping cart for a user
@@ -83,6 +86,11 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
             }
             return _response;
         }
+        /// <summary>
+        /// Controller method to delete the cart header and details
+        /// </summary>
+        /// <param name="cartDetailsID"></param>
+        /// <returns></returns>
         [HttpPost("RemoveCart")]
         public async Task<ResponseDto> RemoveCart([FromBody] int cartDetailsID)
         {
@@ -113,6 +121,53 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
                     _response.Message = "No entries to be deleted.";
                 }
                 return _response;
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.Message = ex.Message;
+            }
+            return _response;
+        }
+        [HttpGet("GetCart/{userId}")]
+        public async Task<ResponseDto> GetCart(string userId)
+        {
+            try
+            {
+                var checkIfUserCartExists = await _db.CartHeaders.FirstOrDefaultAsync(h => h.UserId == userId);
+
+                if (checkIfUserCartExists != null)
+                {
+                    var userCartHasProducts = await _db.CartDetails.Where(d => d.CartHeaderId == checkIfUserCartExists.CartHeaderId).Include(d=>d.CartHeader).ToListAsync();
+
+                    if (userCartHasProducts != null)
+                    {
+                        CartDto cart = new()
+                        {
+                            CartHeaderDto = _mapper.Map<CartHeaderDto>(checkIfUserCartExists),
+                            CartDetailsDto = _mapper.Map<IEnumerable<CartDetailsDto>>(userCartHasProducts),
+                        };
+                        IEnumerable<ProductDto> products = await _productService.GetProductAsync();
+                        
+                        foreach (var item in cart.CartDetailsDto)
+                        {
+                            item.ProductDto = products.FirstOrDefault(p => p.ProductId == item.ProductId);
+                            item.CartHeaderDto = cart.CartHeaderDto;
+                            item.CartHeaderDto.CartTotal += (item.Count * item.ProductDto.Price);
+                        }
+                        _response.Result = cart;
+                    }
+                    else
+                    {
+                        _response.IsSuccess = false;
+                        _response.Message = "User cart does not have any products.";
+                    }
+                }
+                else
+                {
+                    _response.IsSuccess = false;
+                    _response.Message = "User cart does not exist.";
+                }
             }
             catch (Exception ex)
             {

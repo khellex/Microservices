@@ -23,7 +23,7 @@ builder.Services.AddHttpClient<ICouponService, CouponService>();
 builder.Services.AddHttpClient<IAuthService, AuthService>();
 builder.Services.AddHttpClient<IProductService, ProductService>();
 
-//assigns the couponAPI, AuthApi base URL
+//assigns the couponAPI, AuthApi, ProdcutAPI base URL
 var urlConfig = builder.Configuration.GetSection("ServiceUrls");
 
 StaticDetails.CouponApiBaseURL = urlConfig.GetValue<string>("CouponAPI");
