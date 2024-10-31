@@ -22,9 +22,13 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 //adding the httpclient to communicate with other service projects
 builder.Services.AddHttpClient("Product", p => p.BaseAddress =
 new Uri(builder.Configuration["ServiceUrls:ProductAPI"]));
+builder.Services.AddHttpClient("Coupon", p => p.BaseAddress =
+new Uri(builder.Configuration["ServiceUrls:CouponAPI"]));
+
 
 //adding the services to the DI pipeline
 builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<ICouponService, CouponService>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

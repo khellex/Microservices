@@ -17,14 +17,16 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
         private IMapper _mapper;
         private ILogger<CartAPIController> _logger;
         private readonly IProductService _productService;
+        private readonly ICouponService _couponService;
 
-        public CartAPIController(ApplicationDbContext db, IMapper mapper, ILogger<CartAPIController> logger, IProductService productService)
+        public CartAPIController(ApplicationDbContext db, IMapper mapper, ILogger<CartAPIController> logger, IProductService productService, ICouponService couponService)
         {
             _db = db;
             _mapper = mapper;
             _logger = logger;
             _response = new();
             _productService = productService;
+            _couponService = couponService;
         }
         /// <summary>
         /// Controller method to add/edit Shopping cart for a user
@@ -129,6 +131,12 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
             }
             return _response;
         }
+        /// <summary>
+        /// Gets the full cart header+details for the user
+        /// Also, returns the full details of products 
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
         [HttpGet("GetCart/{userId}")]
         public async Task<ResponseDto> GetCart(string userId)
         {
@@ -138,7 +146,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
 
                 if (checkIfUserCartExists != null)
                 {
-                    var userCartHasProducts = await _db.CartDetails.Where(d => d.CartHeaderId == checkIfUserCartExists.CartHeaderId).Include(d=>d.CartHeader).ToListAsync();
+                    var userCartHasProducts = await _db.CartDetails.Where(d => d.CartHeaderId == checkIfUserCartExists.CartHeaderId).ToListAsync();
 
                     if (userCartHasProducts != null)
                     {
@@ -147,13 +155,24 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
                             CartHeaderDto = _mapper.Map<CartHeaderDto>(checkIfUserCartExists),
                             CartDetailsDto = _mapper.Map<IEnumerable<CartDetailsDto>>(userCartHasProducts),
                         };
+                        //making a call to the product API to fetch all the products
                         IEnumerable<ProductDto> products = await _productService.GetProductAsync();
-                        
+
                         foreach (var item in cart.CartDetailsDto)
                         {
                             item.ProductDto = products.FirstOrDefault(p => p.ProductId == item.ProductId);
-                            item.CartHeaderDto = cart.CartHeaderDto;
-                            item.CartHeaderDto.CartTotal += (item.Count * item.ProductDto.Price);
+                            cart.CartHeaderDto.CartTotal += (item.Count * item.ProductDto.Price);
+                        }
+
+                        if (!string.IsNullOrEmpty(cart.CartHeaderDto.CouponCode))
+                        {
+                            //making a call to the coupon API to fetch the coupon based on coupon code
+                            CouponDto coupon = await _couponService.GetCouponAsync(cart.CartHeaderDto.CouponCode);
+                            if (coupon != null && cart.CartHeaderDto.CartTotal > coupon.MinAmount)
+                            {
+                                cart.CartHeaderDto.CartTotal -= coupon.DiscountAmount;
+                                cart.CartHeaderDto.Discount = coupon.DiscountAmount;
+                            }
                         }
                         _response.Result = cart;
                     }
@@ -162,6 +181,58 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
                         _response.IsSuccess = false;
                         _response.Message = "User cart does not have any products.";
                     }
+                }
+                else
+                {
+                    _response.IsSuccess = false;
+                    _response.Message = "User cart does not exist.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.Message = ex.Message;
+            }
+            return _response;
+        }
+        [HttpPost("ApplyCoupon")]
+        public async Task<ResponseDto> ApplyCoupon([FromBody] CartDto cartDto)
+        {
+            try
+            {
+                var checkUserCartExists = await _db.CartHeaders.FirstOrDefaultAsync(h => h.UserId == cartDto.CartHeaderDto.UserId);
+                if (checkUserCartExists != null && cartDto.CartHeaderDto.CouponCode != null)
+                {
+                    checkUserCartExists.CouponCode = cartDto.CartHeaderDto.CouponCode;
+                    _db.Update(checkUserCartExists);
+                    await _db.SaveChangesAsync();
+                    _response.Result = checkUserCartExists;
+                }
+                else
+                {
+                    _response.IsSuccess = false;
+                    _response.Message = "User cart does not exist.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.Message = ex.Message;
+            }
+            return _response;
+        }
+        [HttpPost("RemoveCoupon")]
+        public async Task<ResponseDto> RemoveCoupon([FromBody] CartDto cartDto)
+        {
+            try
+            {
+                var checkUserCartExists = await _db.CartHeaders.FirstOrDefaultAsync(h => h.UserId == cartDto.CartHeaderDto.UserId);
+                if (checkUserCartExists != null)
+                {
+                    checkUserCartExists.CouponCode = string.Empty;
+                    _db.Update(checkUserCartExists);
+                    await _db.SaveChangesAsync();
+                    _response.Result = checkUserCartExists;
                 }
                 else
                 {
