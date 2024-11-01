@@ -203,10 +203,21 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
                 var checkUserCartExists = await _db.CartHeaders.FirstOrDefaultAsync(h => h.UserId == cartDto.CartHeaderDto.UserId);
                 if (checkUserCartExists != null && cartDto.CartHeaderDto.CouponCode != null)
                 {
-                    checkUserCartExists.CouponCode = cartDto.CartHeaderDto.CouponCode;
-                    _db.Update(checkUserCartExists);
-                    await _db.SaveChangesAsync();
-                    _response.Result = checkUserCartExists;
+                    var checkIfCouponCodeIsValid = await _couponService.GetCouponAsync(cartDto.CartHeaderDto.CouponCode);
+                    //coupon code is returned null if the coupon is invalid
+                    if (checkIfCouponCodeIsValid.CouponCode != null)
+                    {
+                        checkUserCartExists.CouponCode = cartDto.CartHeaderDto.CouponCode;
+                        _db.Update(checkUserCartExists);
+                        await _db.SaveChangesAsync();
+                        _response.Result = checkUserCartExists;
+                        _response.Message = "Coupon applied successfully.";
+                    }
+                    else
+                    {
+                        _response.Message = "Invalid coupon code.";
+                        _response.IsSuccess = false;
+                    }
                 }
                 else
                 {
@@ -233,6 +244,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
                     _db.Update(checkUserCartExists);
                     await _db.SaveChangesAsync();
                     _response.Result = checkUserCartExists;
+                    _response.Message = "Coupon code removed successfully.";
                 }
                 else
                 {
