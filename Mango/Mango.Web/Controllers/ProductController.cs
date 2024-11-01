@@ -103,7 +103,7 @@ namespace Mango.Web.Controllers
                 return RedirectToAction(nameof(ProductIndex), response);
             }
             TempData["error"] = deleteProduct.Message;
-            return RedirectToAction(nameof(DeleteProduct), productDto.ProductId);
+            return RedirectToAction(nameof(DeleteProduct), new { productId = productDto.ProductId });
         }
         /// <summary>
         /// 

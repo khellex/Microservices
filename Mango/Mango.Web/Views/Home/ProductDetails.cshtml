@@ -1,6 +1,7 @@
 ﻿@model ProductDto
 
 <form method="post">
+    <input asp-for="ProductId" hidden />
     <div class=" pt-4">
         <div class="card container" style="border:1px solid #808080;">
             <div class="card-header bg-dark text-light row" style="border-radius: 0px;">
@@ -27,7 +28,7 @@
                             </div>
                             <div class="row mx-0">
                                 <input asp-for="@Model.Count" class="form-control" min="1" max="10" />
-                                <span asp-validation-for="@Model.Count" class="text-danger" ></span>
+                                <span asp-validation-for="@Model.Count" class="text-danger"></span>
                             </div>
                         </div>
                     </div>
