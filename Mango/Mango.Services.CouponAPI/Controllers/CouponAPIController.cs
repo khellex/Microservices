@@ -88,11 +88,12 @@ namespace Mango.Services.CouponAPI.Controllers
             try
             {
                 Coupon couponFromDb = await _db.Coupons.FirstOrDefaultAsync(c => c.CouponCode.ToLower() == code.ToLower());
-                if (couponFromDb== null)
+                if (couponFromDb != null)
                 {
-                    _response.IsSuccess = false;
+                    _response.Result = _mapper.Map<CouponDto>(couponFromDb);
+                    return _response;
                 }
-                _response.Result = _mapper.Map<CouponDto>(couponFromDb);
+                _response.IsSuccess = false;
             }
             catch (Exception ex)
             {
