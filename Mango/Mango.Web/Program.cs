@@ -14,7 +14,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     {
         options.LoginPath = "/Auth/Login";
         options.LogoutPath = "/Auth/Logout";
-        options.ExpireTimeSpan = TimeSpan.FromHours(10); //this property is different from the CookieOption.Expires property in the TokenProvider.cs
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(20); //this property is different from the CookieOption.Expires property in the TokenProvider.cs
     });
 //adding the httpclient, httpcontextaccessor to the DI pipeline
 builder.Services.AddHttpContextAccessor();
@@ -22,6 +22,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddHttpClient<ICouponService, CouponService>();
 builder.Services.AddHttpClient<IAuthService, AuthService>();
 builder.Services.AddHttpClient<IProductService, ProductService>();
+builder.Services.AddHttpClient<ICartService, CartService>();
 
 //assigns the couponAPI, AuthApi, ProdcutAPI base URL
 var urlConfig = builder.Configuration.GetSection("ServiceUrls");
@@ -29,6 +30,7 @@ var urlConfig = builder.Configuration.GetSection("ServiceUrls");
 StaticDetails.CouponApiBaseURL = urlConfig.GetValue<string>("CouponAPI");
 StaticDetails.AuthApiBaseURL = urlConfig.GetValue<string>("AuthAPI");
 StaticDetails.ProductApiBaseURL = urlConfig.GetValue<string>("ProductAPI");
+StaticDetails.CartApiBaseURL = urlConfig.GetValue<string>("CartAPI");
 
 //adding the ICouponService,IAuthService,ITokenProvider
 //and IBaseService interface to the DI pipeline
@@ -37,6 +39,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IBaseService, BaseService>();
 builder.Services.AddScoped<ITokenProvider, TokenProvider>();
 builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<ICartService, CartService>();
 
 var app = builder.Build();
 
