@@ -11,7 +11,7 @@ namespace Mango.Services.ProductAPI.Controllers
 {
     [Route("api/product")]
     [ApiController]
-    //[Authorize]
+    [Authorize]
     public class ProductAPIController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -78,31 +78,6 @@ namespace Mango.Services.ProductAPI.Controllers
             }
             return _response;
         }
-        /// <summary>
-        /// GETs list of coupons available in system based on the coupon code passed
-        /// </summary>
-        /// <param name="code"></param>
-        /// <returns>Coupon object based on the supplied coupon code</returns>
-        //[HttpGet("GetByCode/{code}")]
-        //public async Task<ResponseDto> GetByCode(string code)
-        //{
-        //    try
-        //    {
-        //        Coupon couponFromDb = await _db.Coupons.FirstOrDefaultAsync(c => c.CouponCode.ToLower() == code.ToLower());
-        //        if (couponFromDb == null)
-        //        {
-        //            _response.IsSuccess = false;
-        //        }
-        //        _response.Result = _mapper.Map<CouponDto>(couponFromDb);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "An error occurred while processing the request.");
-        //        _response.IsSuccess = false;
-        //        _response.Message = ex.Message;
-        //    }
-        //    return _response;
-        //}
         /// <summary>
         /// Create/Add new product
         /// </summary>

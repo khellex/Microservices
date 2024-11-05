@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
+using Mango.MessageBus;
 using Mango.Services.ShoppingCartAPI.Data;
 using Mango.Services.ShoppingCartAPI.Models;
 using Mango.Services.ShoppingCartAPI.Models.Dto;
 using Mango.Services.ShoppingCartAPI.Service.IService;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -10,6 +12,7 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
 {
     [Route("api/cart")]
     [ApiController]
+    [Authorize]
     public class CartAPIController : ControllerBase
     {
         private readonly ApplicationDbContext _db;
@@ -18,8 +21,11 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
         private ILogger<CartAPIController> _logger;
         private readonly IProductService _productService;
         private readonly ICouponService _couponService;
+        private readonly IMessageBus _messageBus;
+        private readonly IConfiguration _configuration;
 
-        public CartAPIController(ApplicationDbContext db, IMapper mapper, ILogger<CartAPIController> logger, IProductService productService, ICouponService couponService)
+        public CartAPIController(ApplicationDbContext db, IMapper mapper, ILogger<CartAPIController> logger, IProductService productService, ICouponService couponService,
+            IMessageBus messageBus, IConfiguration configuration)
         {
             _db = db;
             _mapper = mapper;
@@ -27,6 +33,8 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
             _response = new();
             _productService = productService;
             _couponService = couponService;
+            _messageBus = messageBus;
+            _configuration = configuration;
         }
         /// <summary>
         /// Controller method to add/edit Shopping cart for a user
@@ -250,6 +258,26 @@ namespace Mango.Services.ShoppingCartAPI.Controllers
                 {
                     _response.IsSuccess = false;
                     _response.Message = "User cart does not exist.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _response.IsSuccess = false;
+                _response.Message = ex.Message;
+            }
+            return _response;
+        }
+        [HttpPost("EmailCartRequest")]
+        public async Task<ResponseDto> EmailCartRequest([FromBody] CartDto cartDto)
+        {
+            try
+            {
+                var checkUserCartExists = await _db.CartHeaders.FirstOrDefaultAsync(h => h.UserId == cartDto.CartHeaderDto.UserId);
+                if (checkUserCartExists != null)
+                {
+                    await _messageBus.PublishMessage(cartDto, _configuration.GetValue<string>("TopicAndQueueNames:EmailShoppingCartQueue"));
+                    _response.Message = "Email will be processed and sent successfully.";
+                    _response.Result = true;
                 }
             }
             catch (Exception ex)

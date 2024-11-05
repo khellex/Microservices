@@ -102,5 +102,17 @@ namespace Mango.Web.Controllers
                 return RedirectToAction(nameof(CartIndex));
             }
         }
+        [HttpPost]
+        public async Task<IActionResult> EmailCart(CartDto cartDto)
+        {
+            ResponseDto? emailResponse = await _cartService.EmailCart(cartDto);
+            if (emailResponse.Result != null && emailResponse.IsSuccess)
+            {
+                TempData["success"] = emailResponse.Message;
+                return RedirectToAction(nameof(CartIndex));
+            }
+            TempData["error"] = emailResponse.Message;
+            return RedirectToAction(nameof(CartIndex));
+        }
     }
 }
