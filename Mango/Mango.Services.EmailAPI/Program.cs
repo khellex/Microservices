@@ -1,4 +1,10 @@
+using Mango.Services.EmailAPI.Data;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
+
+//added the AppDbContext DI to the container
+builder.Services.AddDbContext<ApplicationDbContext>(option => option.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add services to the container.
 
@@ -22,4 +28,24 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+//this method is used to check for any pending migrations and execute them
+ApplyPendingMigrations();
+
 app.Run();
+void ApplyPendingMigrations()
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var _db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        //this line can be used to check for the initial setup
+        //where if the db is not present then the db is first created
+        //and then the table structure is added
+        //_db.Database.EnsureCreated();
+
+        if (_db.Database.GetPendingMigrations().Count() > 0)
+        {
+            _db.Database.Migrate();
+        }
+    }
+}
