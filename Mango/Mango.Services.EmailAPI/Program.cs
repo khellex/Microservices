@@ -1,10 +1,14 @@
 using Mango.Services.EmailAPI.Data;
+using Mango.Services.EmailAPI.Extension;
+using Mango.Services.EmailAPI.Messaging;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 //added the AppDbContext DI to the container
 builder.Services.AddDbContext<ApplicationDbContext>(option => option.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddSingleton<IAzureServiceBusConsumer, AzureServiceBusConsumer>();
 
 // Add services to the container.
 
@@ -30,6 +34,10 @@ app.MapControllers();
 
 //this method is used to check for any pending migrations and execute them
 ApplyPendingMigrations();
+
+//Based on the application state(on/off), we will listen to the
+//Azure Service bus for any message queue
+app.UseAzureServiceBusConsumer();
 
 app.Run();
 void ApplyPendingMigrations()

@@ -10,6 +10,13 @@ using System.Threading.Tasks;
 
 namespace Mango.MessageBus
 {
+    /// <summary>
+    /// This MessageBus implementation is used to send the message from
+    /// the API project ( shopping cart API specifically ) to the
+    /// Azure Service bus queue.
+    /// The message queue will be receive at the Email Sender processor,
+    /// where once the message is received the queue will be emptied one by one.
+    /// </summary>
     public class MessageBus : IMessageBus
     {
         private readonly string ConnectionString = "";
