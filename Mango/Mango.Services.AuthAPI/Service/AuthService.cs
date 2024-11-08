@@ -1,11 +1,11 @@
-﻿using Mango.Services.AuthAPI.Data;
+﻿using Mango.MessageBus;
+using Mango.Services.AuthAPI.Data;
 using Mango.Services.AuthAPI.Models;
 using Mango.Services.AuthAPI.Models.Dto;
 using Mango.Services.AuthAPI.Service.IService;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Mango.Services.AuthAPI.Service
 {
@@ -21,15 +21,19 @@ namespace Mango.Services.AuthAPI.Service
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ILogger<AuthService> _logger;
         private readonly IJwtGenerator _jwtGenerator;
+        private readonly IMessageBus _messageBus;
+        private readonly IConfiguration _configuration;
 
         public AuthService(ApplicationDbContext db, RoleManager<IdentityRole> roleManager, UserManager<ApplicationUser> userManager,
-            ILogger<AuthService> logger, IJwtGenerator jwtGenerator)
+            ILogger<AuthService> logger, IJwtGenerator jwtGenerator, IMessageBus messageBus, IConfiguration configuration)
         {
             _db = db;
             _roleManager = roleManager;
             _userManager = userManager;
             _logger = logger;
             _jwtGenerator = jwtGenerator;
+            _messageBus = messageBus;
+            _configuration = configuration;
         }
         /// <summary>
         /// Can be used to assign a new role to a user,
@@ -147,6 +151,8 @@ namespace Mango.Services.AuthAPI.Service
                         Email = user.Email,
                         PhoneNumber = user.PhoneNumber
                     };
+                    //this will send a message request to the UserRegistrationQueue on Azure Service Bus
+                    await _messageBus.PublishMessage(user.Email, _configuration.GetValue<string>("TopicAndQueueNames:UserRegistrationQueue"));
                     return responseDto;
                 }
                 else
