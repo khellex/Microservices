@@ -1,0 +1,104 @@
+﻿@model CartDto
+
+<input asp-for="CartHeaderDto.CartHeaderId" hidden />
+<input asp-for="CartHeaderDto.UserId" hidden />
+<input asp-for="CartHeaderDto.CartTotal" hidden />
+<input asp-for="CartHeaderDto.CouponCode" hidden />
+<input asp-for="CartHeaderDto.Discount" hidden />
+<form method="post">
+    <div class="border mt-2 p-4 rounded">
+        <div class="container row">
+            <div class="col-md-7 col-12">
+                <span style="font-size:25px;" class="text-warning mb-2">Order Summary</span>
+            </div>
+            <div class="col-md-5 col-12">
+                <a asp-action="CartIndex" class="btn btn-outline-warning form-control">Back to Cart</a>
+            </div>
+            <br /><br /><br />
+            <hr />
+            <div class="col-7">
+                <div class="row pt-2">
+                    <div class="col-12 py-2">
+                        <input asp-for="CartHeaderDto.FirstName" placeholder="Firstname..." class="form-control" />
+                        <span asp-validation-for="CartHeaderDto.FirstName" class="text-danger"></span>
+                    </div>
+                    <div class="col-12 py-2">
+                        <input asp-for="CartHeaderDto.LastName" placeholder="Lastname..." class="form-control" />
+                        <span asp-validation-for="CartHeaderDto.LastName" class="text-danger"></span>
+                    </div>
+                    <div class="col-12 py-2">
+                        <input asp-for="CartHeaderDto.Email" placeholder="Email..." class="form-control" />
+                        <span asp-validation-for="CartHeaderDto.Email" class="text-danger"></span>
+                    </div>
+                    <div class="col-12 py-2">
+                        <input class="form-control" placeholder="Phone..." asp-for="CartHeaderDto.Phone" />
+                        <span asp-validation-for="CartHeaderDto.Phone" class="text-danger"></span>
+                    </div>
+                    <div class="col-12 pt-2">
+                        <label class="col-form-label">Order will be ready in 30minutes after placing order. If you place order when restaurant is closed it will be ready next day.</label>
+                    </div>
+                </div>
+            </div>
+            <div class="col-5">
+                <div class="card mt-2">
+                    <div class="card-body">
+                        <div class=" d-none d-lg-block">
+                            <div class="row text-danger">
+                                <div class="col-6">
+                                    Product Details
+                                </div>
+
+                                <div class="col-3">
+                                    Price
+                                </div>
+                                <div class="col-3">
+                                    Count
+                                </div>
+                            </div>
+                        </div>
+                        <hr />
+                        @foreach (var item in Model.CartDetailsDto)
+                        {
+                            <div class="row h-100">
+                                <div class="col-6">
+                                    <span style="font-size:20px">@item.ProductDto.Name</span>
+                                </div>
+
+                                <div class="col-3" style="font-size:11px;">
+                                    <span style="font-size:17px;">@item.ProductDto.Price.ToString("c")</span>
+
+                                </div>
+                                <div class="col-3" style="font-size:11px;">
+                                    <span style="font-size:17px;">@item.Count</span>
+                                </div>
+                            </div>
+                            <hr />
+                        }
+                        <div class="row">
+                            <div class="col-12 text-center pr-4 text-danger">
+                                Order Total : @Model.CartHeaderDto.CartTotal  <br />
+                                @if (Model.CartHeaderDto.Discount > 0)
+                                {
+                                    <span class="text-success"> Order Discount : @Model.CartHeaderDto.Discount.ToString("c")  </span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="row">
+                            <div class="col-12 ">
+                                <button type="submit" class="btn btn-success form-control ">
+                                    <span>Place Order</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+
