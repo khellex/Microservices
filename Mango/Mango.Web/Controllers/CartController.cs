@@ -10,10 +10,12 @@ namespace Mango.Web.Controllers
     public class CartController : Controller
     {
         private readonly ICartService _cartService;
+        private readonly IOrderService _orderService;
 
-        public CartController(ICartService cartService)
+        public CartController(ICartService cartService, IOrderService orderService)
         {
             _cartService = cartService;
+            _orderService = orderService;
         }
         [Authorize]
         public async Task<IActionResult> CartIndex()
@@ -25,7 +27,43 @@ namespace Mango.Web.Controllers
         {
             return View(await LoadCartDtoBasedOnLoggedInUser());
         }
+        [HttpPost]
+        [ActionName("Checkout")]
+        public async Task<IActionResult> Checkout(CartDto cartDto)
+        {
+            try
+            {
+                CartDto cart = await LoadCartDtoBasedOnLoggedInUser();
+                cart.CartHeaderDto.FirstName = cartDto.CartHeaderDto.FirstName;
+                cart.CartHeaderDto.LastName = cartDto.CartHeaderDto.LastName;
+                cart.CartHeaderDto.Email= cartDto.CartHeaderDto.Email;
+                cart.CartHeaderDto.Phone= cartDto.CartHeaderDto.Phone;
 
+                ResponseDto response =  await _orderService.CreateOrderAsync(cart);
+
+                OrderHeaderDto orderHeaderDto = JsonConvert.DeserializeObject<OrderHeaderDto>(Convert.ToString(response.Result));
+
+                if (response != null && response.IsSuccess)
+                {
+                    //integrate stripe payment here 
+                }
+                else 
+                {
+                    TempData["error"] = response.Message;
+                    return View();
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["error"] = ex.Message;
+                throw;
+            }
+            return View();
+        }
+        public async Task<IActionResult> CheckoutConfirmation(int orderId)
+        {
+            return View(orderId);
+        }
         private async Task<CartDto> LoadCartDtoBasedOnLoggedInUser()
         {
             var loggedInUserId = User.Claims.Where(u => u.Type == JwtRegisteredClaimNames.Sub)?.FirstOrDefault()?.Value;
