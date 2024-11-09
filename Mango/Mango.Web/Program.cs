@@ -23,6 +23,7 @@ builder.Services.AddHttpClient<ICouponService, CouponService>();
 builder.Services.AddHttpClient<IAuthService, AuthService>();
 builder.Services.AddHttpClient<IProductService, ProductService>();
 builder.Services.AddHttpClient<ICartService, CartService>();
+builder.Services.AddHttpClient<IOrderService, OrderService>();
 
 //assigns the couponAPI, AuthApi, ProdcutAPI base URL
 var urlConfig = builder.Configuration.GetSection("ServiceUrls");
@@ -31,6 +32,7 @@ StaticDetails.CouponApiBaseURL = urlConfig.GetValue<string>("CouponAPI");
 StaticDetails.AuthApiBaseURL = urlConfig.GetValue<string>("AuthAPI");
 StaticDetails.ProductApiBaseURL = urlConfig.GetValue<string>("ProductAPI");
 StaticDetails.CartApiBaseURL = urlConfig.GetValue<string>("CartAPI");
+StaticDetails.OrderApiBaseURL = urlConfig.GetValue<string>("OrderAPI");
 
 //adding the ICouponService,IAuthService,ITokenProvider
 //and IBaseService interface to the DI pipeline
@@ -40,6 +42,7 @@ builder.Services.AddScoped<IBaseService, BaseService>();
 builder.Services.AddScoped<ITokenProvider, TokenProvider>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICartService, CartService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 
 var app = builder.Build();
 

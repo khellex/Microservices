@@ -9,6 +9,7 @@
         public static string? AuthApiBaseURL { get; set; }
         public static string? ProductApiBaseURL { get; set; }
         public static string? CartApiBaseURL { get; set; }
+        public static string? OrderApiBaseURL { get; set; }
         public enum ApiType
         {
             GET,
