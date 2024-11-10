@@ -2,10 +2,10 @@
 {
     public class StripeRequestDto
     {
-        public int StripeSessionId { get; set; }
-        public int StripeSessionUrl { get; set; }
-        public int ApprovedUrl { get; set; }
-        public int CancelUrl { get; set; }
+        public string? StripeSessionId { get; set; }
+        public string? StripeSessionUrl { get; set; }
+        public string? ApprovedUrl { get; set; }
+        public string? CancelUrl { get; set; }
         public OrderHeaderDto OrderHeaderDto { get; set; }
     }
 }

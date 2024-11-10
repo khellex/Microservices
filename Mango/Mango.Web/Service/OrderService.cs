@@ -24,5 +24,14 @@ namespace Mango.Web.Service
             }));
         }
 
+        public async Task<ResponseDto?> CreateStripeSessionAsync(StripeRequestDto stripeRequestDto)
+        {
+            return (await _baseService.SendAsync(new RequestDto()
+            {
+                ApiType = ApiType.POST,
+                Data = stripeRequestDto,
+                Url = OrderApiBaseURL + "/api/order/CreateStripeSession"
+            }));
+        }
     }
 }

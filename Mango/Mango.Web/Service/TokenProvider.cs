@@ -43,7 +43,7 @@ namespace Mango.Web.Service
                 {
                     HttpOnly = true, // Prevents access via JavaScript
                     Secure = true,   // Ensures it is sent only over HTTPS
-                    SameSite = SameSiteMode.Strict, // Mitigates CSRF
+                    SameSite = SameSiteMode.Lax, // Mitigates CSRF
                     Expires = DateTimeOffset.UtcNow.AddHours(2) // Set an expiration
                 };
 

@@ -4,7 +4,8 @@ using Mango.Services.OrderAPI.Models.Dto;
 using Mango.Services.OrderAPI.Service.IService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Stripe;
+using Microsoft.EntityFrameworkCore;
+using Stripe.Checkout;
 using static Mango.Services.OrderAPI.Utility.StaticDetails;
 
 namespace Mango.Services.OrderAPI.Controller
@@ -53,34 +54,58 @@ namespace Mango.Services.OrderAPI.Controller
             }
             return _response;
         }
-
         [Authorize]
         [HttpPost("CreateStripeSession")]
         public async Task<ResponseDto> CreateStripeSession([FromBody] StripeRequestDto stripeRequestDto)
         {
             try
             {
-                var options = new Stripe.Checkout.SessionCreateOptions
+                //options for the strip checkout initiation
+                var options = new SessionCreateOptions
                 {
-                    SuccessUrl = "https://example.com/success",
-                    LineItems = new List<Stripe.Checkout.SessionLineItemOptions>
-                    {
-                        new Stripe.Checkout.SessionLineItemOptions
-                        {
-                            Price = "price_1MotwRLkdIwHu7ixYcPLm5uZ",
-                            Quantity = 2,
-                        },
-                    },
+                    SuccessUrl = stripeRequestDto.ApprovedUrl, //if the checkout is success, then where should stripe redirect after that
+                    CancelUrl = stripeRequestDto.CancelUrl, //if the checkout is failed/cancelled, then where should stripe redirect after that
+                    LineItems = new List<SessionLineItemOptions>(), //all the checkout screen contents
                     Mode = "payment",
                 };
-                var service = new Stripe.Checkout.SessionService();
-                service.Create(options);
+
+                foreach (var item in stripeRequestDto.OrderHeaderDto.OrderDetails)
+                {
+                    var sessionLineItem = new SessionLineItemOptions()
+                    {
+                        PriceData = new SessionLineItemPriceDataOptions()
+                        {
+                            UnitAmount = (long)(item.Price * 100),  //₹20.99 => 2099
+                            Currency = "inr",
+                            ProductData = new SessionLineItemPriceDataProductDataOptions()
+                            {
+                                Name = item.ProductDto.Name,
+                            }
+                        },
+                        Quantity = item.Count,
+                    };
+                    options.LineItems.Add(sessionLineItem);
+                }
+                //creates a stripe session service
+                var service = new SessionService();
+
+                //initialize a stripe session object, so we can fetch the stripe id and session URL for future purposes 
+                Session session = await service.CreateAsync(options);
+                stripeRequestDto.StripeSessionUrl = session.Url;
+
+                OrderHeader orderHeader = await _db.OrderHeaders.FirstOrDefaultAsync(h => h.OrderHeaderId == stripeRequestDto.OrderHeaderDto.OrderHeaderId);
+                if (orderHeader != null)
+                {
+                    orderHeader.StripeSessionId = session.Id;
+                    await _db.SaveChangesAsync();
+                    _response.Result = stripeRequestDto;
+                    _response.Message = "Payment initiated successfully.";
+                }
             }
             catch (Exception ex)
             {
                 _response.Message = ex.Message;
                 _response.IsSuccess = false;
-                throw;
             }
             return _response;
         }
