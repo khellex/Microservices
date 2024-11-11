@@ -23,5 +23,24 @@
 
         //session cookie
         public const string TokenCookie = "JWT";
+
+        public enum OrderStatus
+        {
+            Pending,
+            Approved,
+            ReadyForPickup,
+            Completed,
+            Refunded,
+            Cancelled
+        }
+        public static readonly Dictionary<OrderStatus, string> Statuses = new()
+        {
+            { OrderStatus.Pending, "Pending" },
+            { OrderStatus.Approved, "Approved" },
+            { OrderStatus.ReadyForPickup, "Ready For Pickup" },
+            { OrderStatus.Completed, "Completed" },
+            { OrderStatus.Refunded, "Refunded" },
+            { OrderStatus.Cancelled, "Cancelled" }
+        };
     }
 }

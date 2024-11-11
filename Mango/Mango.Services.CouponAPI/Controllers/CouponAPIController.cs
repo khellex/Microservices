@@ -33,7 +33,8 @@ namespace Mango.Services.CouponAPI.Controllers
         /// Full coupon object
         /// </returns>
         [HttpGet]
-        public ResponseDto Get() {
+        public ResponseDto Get()
+        {
             try
             {
                 IEnumerable<Coupon> objListOfCoupons = _db.Coupons.ToList();
@@ -109,7 +110,7 @@ namespace Mango.Services.CouponAPI.Controllers
         /// <param name="couponDTO"></param>
         /// <returns></returns>
         [HttpPost]
-        [Authorize(Roles ="Admin")]
+        [Authorize(Roles = "Admin")]
         public async Task<ResponseDto> Post([FromBody] CouponDto couponDTO)
         {
             try
@@ -117,6 +118,20 @@ namespace Mango.Services.CouponAPI.Controllers
                 Coupon coupon = _mapper.Map<Coupon>(couponDTO);
                 await _db.Coupons.AddAsync(coupon);
                 await _db.SaveChangesAsync();
+
+                //implementation to create a stripe coupon
+                var options = new Stripe.CouponCreateOptions
+                {
+                    
+                    AmountOff = (long)(couponDTO.DiscountAmount*100),
+                    Id = couponDTO.CouponCode,
+                    Currency="inr",
+                    Name=couponDTO.CouponCode,
+                };
+
+                var service = new Stripe.CouponService();
+                await service.CreateAsync(options);
+
                 _response.Message = "Coupon created successfully";
             }
             catch (Exception ex)
@@ -163,11 +178,16 @@ namespace Mango.Services.CouponAPI.Controllers
         {
             try
             {
-                Coupon couponFromDb = await _db.Coupons.FirstOrDefaultAsync(c => c.CouponId==id);
+                Coupon couponFromDb = await _db.Coupons.FirstOrDefaultAsync(c => c.CouponId == id);
                 if (couponFromDb != null)
                 {
                     _db.Coupons.Remove(couponFromDb);
                     await _db.SaveChangesAsync();
+
+                    //implementation to delete a stripe coupon
+                    var service = new Stripe.CouponService();
+                    await service.DeleteAsync(couponFromDb.CouponCode);
+
                     _response.Result = _mapper.Map<CouponDto>(couponFromDb);
                     _response.Message = "Coupon deleted successfully.";
                 }

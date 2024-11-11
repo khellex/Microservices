@@ -152,7 +152,7 @@ namespace Mango.Services.AuthAPI.Service
                         PhoneNumber = user.PhoneNumber
                     };
                     //this will send a message request to the UserRegistrationQueue on Azure Service Bus
-                    await _messageBus.PublishMessage(user.Email, _configuration.GetValue<string>("TopicAndQueueNames:UserRegistrationQueue"));
+                    //await _messageBus.PublishMessage(user.Email, _configuration.GetValue<string>("TopicAndQueueNames:UserRegistrationQueue"));
                     return responseDto;
                 }
                 else

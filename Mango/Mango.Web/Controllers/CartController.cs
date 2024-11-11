@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Newtonsoft.Json;
+using static Mango.Web.Utilities.StaticDetails;
+
 
 namespace Mango.Web.Controllers
 {
@@ -36,10 +38,10 @@ namespace Mango.Web.Controllers
                 CartDto cart = await LoadCartDtoBasedOnLoggedInUser();
                 cart.CartHeaderDto.FirstName = cartDto.CartHeaderDto.FirstName;
                 cart.CartHeaderDto.LastName = cartDto.CartHeaderDto.LastName;
-                cart.CartHeaderDto.Email= cartDto.CartHeaderDto.Email;
-                cart.CartHeaderDto.Phone= cartDto.CartHeaderDto.Phone;
+                cart.CartHeaderDto.Email = cartDto.CartHeaderDto.Email;
+                cart.CartHeaderDto.Phone = cartDto.CartHeaderDto.Phone;
 
-                ResponseDto response =  await _orderService.CreateOrderAsync(cart);
+                ResponseDto response = await _orderService.CreateOrderAsync(cart);
 
                 OrderHeaderDto orderHeaderDto = JsonConvert.DeserializeObject<OrderHeaderDto>(Convert.ToString(response.Result));
 
@@ -49,7 +51,7 @@ namespace Mango.Web.Controllers
                     StripeRequestDto stripeRequestDto = new()
                     {
                         ApprovedUrl = domain + "cart/CheckoutConfirmation?orderId=" + orderHeaderDto.OrderHeaderId,
-                        CancelUrl = domain+"cart/Checkout",
+                        CancelUrl = domain + "cart/Checkout",
                         OrderHeaderDto = orderHeaderDto,
                     };
                     var stripeResponse = await _orderService.CreateStripeSessionAsync(stripeRequestDto);
@@ -59,7 +61,7 @@ namespace Mango.Web.Controllers
                     Response.Headers.Add("Location", stripe.StripeSessionUrl);
                     return new StatusCodeResult(303);
                 }
-                else 
+                else
                 {
                     TempData["error"] = response.Message;
                     return View();
@@ -73,6 +75,24 @@ namespace Mango.Web.Controllers
         }
         public async Task<IActionResult> CheckoutConfirmation(int orderId)
         {
+            try
+            {
+                ResponseDto? validatePaymentResponse = await _orderService.ValidateStripeSessionAsync(orderId);
+                if (validatePaymentResponse.Result != null && validatePaymentResponse.IsSuccess)
+                {
+                    OrderHeaderDto orderHeader = JsonConvert.DeserializeObject<OrderHeaderDto>(Convert.ToString(validatePaymentResponse.Result));
+                    if (orderHeader.Status == Statuses[OrderStatus.Approved])
+                    {
+                        return View(orderId);
+                    }
+                    return View(orderId);
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["error"] = ex.Message;
+                throw;
+            }
             return View(orderId);
         }
         private async Task<CartDto> LoadCartDtoBasedOnLoggedInUser()
@@ -102,7 +122,7 @@ namespace Mango.Web.Controllers
                 ResponseDto? applyCouponResponse = await _cartService.ApplyCouponAsync(cartDto);
                 if (applyCouponResponse.Result != null && applyCouponResponse.IsSuccess)
                 {
-                    TempData["success"]=applyCouponResponse.Message;
+                    TempData["success"] = applyCouponResponse.Message;
                     return RedirectToAction(nameof(CartIndex));
                 }
                 TempData["error"] = applyCouponResponse.Message;

@@ -5,6 +5,7 @@ using Mango.Services.OrderAPI.Service.IService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Stripe;
 using Stripe.Checkout;
 using static Mango.Services.OrderAPI.Utility.StaticDetails;
 
@@ -69,6 +70,14 @@ namespace Mango.Services.OrderAPI.Controller
                     Mode = "payment",
                 };
 
+                var discountObj = new List<SessionDiscountOptions>()
+                {
+                    new SessionDiscountOptions()
+                    {
+                        Coupon=stripeRequestDto.OrderHeaderDto.CouponCode.ToUpper(),
+                    }
+                };
+
                 foreach (var item in stripeRequestDto.OrderHeaderDto.OrderDetails)
                 {
                     var sessionLineItem = new SessionLineItemOptions()
@@ -85,6 +94,12 @@ namespace Mango.Services.OrderAPI.Controller
                         Quantity = item.Count,
                     };
                     options.LineItems.Add(sessionLineItem);
+                }
+
+                //add coupon only if the discount is more than 0
+                if (stripeRequestDto.OrderHeaderDto.Discount > 0)
+                {
+                    options.Discounts = discountObj;
                 }
                 //creates a stripe session service
                 var service = new SessionService();
@@ -109,5 +124,44 @@ namespace Mango.Services.OrderAPI.Controller
             }
             return _response;
         }
+        [Authorize]
+        [HttpPost("ValidateStripeSession")]
+        public async Task<ResponseDto> ValidateStripeSession([FromBody] int orderHeaderId)
+        {
+            try
+            {
+                OrderHeader orderHeader = await _db.OrderHeaders.FirstOrDefaultAsync(h => h.OrderHeaderId == orderHeaderId);
+
+                //creates a stripe session service
+                var service = new SessionService();
+
+                //initialize a stripe session object, so we can fetch the stripe id and session URL for future purposes 
+                Session session = await service.GetAsync(orderHeader.StripeSessionId);
+
+                //create a payment intent service object
+                var paymentIntentService = new PaymentIntentService();
+
+                //access the payment service object to check the payment status
+                PaymentIntent paymentIntent = await paymentIntentService.GetAsync(session.PaymentIntentId);
+
+                if (paymentIntent.Status == "succeeded")
+                {
+                    //when the payment was successful, as per the status fetched from Stripe
+                    orderHeader.PaymentIntentId = paymentIntent.Id;
+                    orderHeader.Status = Statuses[OrderStatus.Approved];
+                    await _db.SaveChangesAsync();
+
+                    _response.Result = _mapper.Map<OrderHeaderDto>(orderHeader);
+                    _response.Message = "Payment validated successfully.";
+                }
+            }
+            catch (Exception ex)
+            {
+                _response.Message = ex.Message;
+                _response.IsSuccess = false;
+            }
+            return _response;
+        }
+
     }
 }

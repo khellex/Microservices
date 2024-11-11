@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using Mango.Services.CouponAPI.Extensions;
+using Stripe;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,6 +46,9 @@ builder.Services.AddSwaggerGen(option =>
         }
     });
 });
+
+//stripe config secret key
+StripeConfiguration.ApiKey = builder.Configuration.GetSection("Stripe:SecretKey").Get<string>();
 
 //added the Serilog logic to
 //this extension to clean up the program.cs
