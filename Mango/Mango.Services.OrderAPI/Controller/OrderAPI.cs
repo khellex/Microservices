@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Mango.MessageBus;
 using Mango.Services.OrderAPI.Models;
 using Mango.Services.OrderAPI.Models.Dto;
 using Mango.Services.OrderAPI.Service.IService;
@@ -19,13 +20,17 @@ namespace Mango.Services.OrderAPI.Controller
         private ResponseDto _response;
         private readonly ApplicationDbContext _db;
         private readonly IProductService _productService;
+        private readonly IMessageBus _messageBus;
+        private readonly IConfiguration _configuration;
 
-        public OrderAPI(IMapper mapper, ApplicationDbContext db, IProductService productService)
+        public OrderAPI(IMapper mapper, ApplicationDbContext db, IProductService productService, IConfiguration configuration, IMessageBus messageBus)
         {
             _mapper = mapper;
             _db = db;
             _productService = productService;
             _response = new();
+            _configuration = configuration;
+            _messageBus = messageBus;
         }
         [Authorize]
         [HttpPost("CreateOrder")]
@@ -150,6 +155,18 @@ namespace Mango.Services.OrderAPI.Controller
                     orderHeader.PaymentIntentId = paymentIntent.Id;
                     orderHeader.Status = Statuses[OrderStatus.Approved];
                     await _db.SaveChangesAsync();
+
+                    RewardsDto rewards = new()
+                    {
+                        UserId = orderHeader.UserId,
+                        RewardsActivity = Convert.ToInt32(orderHeader.OrderTotal),
+                        OrderId = orderHeader.OrderHeaderId,
+                    };
+                    //fetching the Azure service Topic name from the app settings
+                    string topicName = _configuration.GetValue<string>("TopicAndQueueNames:OrderCreatedTopic");
+
+                    //publishing the rewards message to the service bus topic
+                    await _messageBus.PublishMessage(rewards, topicName);
 
                     _response.Result = _mapper.Map<OrderHeaderDto>(orderHeader);
                     _response.Message = "Payment validated successfully.";
