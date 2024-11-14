@@ -14,6 +14,7 @@ namespace Mango.Services.OrderAPI.Controller
 {
     [Route("api/order")]
     [ApiController]
+    [Authorize]
     public class OrderAPI : ControllerBase
     {
         private IMapper _mapper;
@@ -32,7 +33,6 @@ namespace Mango.Services.OrderAPI.Controller
             _configuration = configuration;
             _messageBus = messageBus;
         }
-        [Authorize]
         [HttpPost("CreateOrder")]
         public async Task<ResponseDto> CreateOrder([FromBody] CartDto cart)
         {
@@ -60,7 +60,6 @@ namespace Mango.Services.OrderAPI.Controller
             }
             return _response;
         }
-        [Authorize]
         [HttpPost("CreateStripeSession")]
         public async Task<ResponseDto> CreateStripeSession([FromBody] StripeRequestDto stripeRequestDto)
         {
@@ -129,7 +128,6 @@ namespace Mango.Services.OrderAPI.Controller
             }
             return _response;
         }
-        [Authorize]
         [HttpPost("ValidateStripeSession")]
         public async Task<ResponseDto> ValidateStripeSession([FromBody] int orderHeaderId)
         {
@@ -179,6 +177,90 @@ namespace Mango.Services.OrderAPI.Controller
             }
             return _response;
         }
+        [HttpGet("GetOrders")]
+        public async Task<ResponseDto> GetOrders(string? userId = null)
+        {
+            IEnumerable<OrderHeader> orders;
+            try
+            {
+                if (User.IsInRole(Roles[UserRoles.Admin]))
+                {
+                    orders = _db.OrderHeaders.Include(d => d.OrderDetails).OrderByDescending(o => o.OrderHeaderId).ToList();
+                }
+                else
+                {
+                    orders = _db.OrderHeaders.Include(d => d.OrderDetails).Where(h => h.UserId == userId).OrderByDescending(o => o.OrderHeaderId).ToList();
+                }
+                _response.Result = _mapper.Map<IEnumerable<OrderHeaderDto>>(orders);
+            }
+            catch (Exception ex)
+            {
+                _response.Message = ex.Message;
+                _response.IsSuccess = false;
+            }
+            return _response;
+        }
+        [HttpGet("GetOrder/{orderId:int}")]
+        public async Task<ResponseDto> GetOrder(int orderId)
+        {
+            try
+            {
+                OrderHeader orders = await _db.OrderHeaders.Include(d => d.OrderDetails).FirstOrDefaultAsync(h => h.OrderHeaderId == orderId);
+                if (orders != null)
+                {
+                    _response.Result = _mapper.Map<OrderHeaderDto>(orders);
+                }
+                else
+                {
+                    _response.IsSuccess = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _response.Message = ex.Message;
+                _response.IsSuccess = false;
+            }
+            return _response;
+        }
+        [HttpPost("UpdateOrderStatus/{orderId:int}")]
+        public async Task<ResponseDto> UpdateOrderStatus(int orderId, [FromBody] string newStatus)
+        {
+            try
+            {
+                OrderHeader orders = await _db.OrderHeaders.Include(d => d.OrderDetails).FirstOrDefaultAsync(h => h.OrderHeaderId == orderId);
+                if (orders != null)
+                {
+                    //if the user wishes to cancel the order, the incoming status will be cancelled
+                    if (!string.IsNullOrEmpty(newStatus) && newStatus == Statuses[OrderStatus.Cancelled])
+                    {
+                        //we can initiate a payment refund to the customer via stripe
+                        var options = new RefundCreateOptions()
+                        {
+                            Reason = RefundReasons.RequestedByCustomer,
+                            PaymentIntent = orders.PaymentIntentId
+                        };
+                        //calling the stripe refund service object
+                        var service = new RefundService();
 
+                        Refund refund = await service.CreateAsync(options);
+                    }
+                    orders.Status = newStatus;
+                    await _db.SaveChangesAsync();
+
+                    _response.Result = _mapper.Map<OrderHeaderDto>(orders);
+                }
+                else
+                {
+                    _response.Message = "Order does not exist";
+                    _response.IsSuccess = false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _response.Message = ex.Message;
+                _response.IsSuccess = false;
+            }
+            return _response;
+        }
     }
 }
