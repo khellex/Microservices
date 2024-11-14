@@ -66,6 +66,11 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+//by default, API projects do not have a wwwroot folder, when we add one
+//we need to tell the project where to look for all the static files,
+//hence we add this line
+app.UseStaticFiles();
+
 //this method is used to check for any pending migrations and execute them
 ApplyPendingMigrations();
 
