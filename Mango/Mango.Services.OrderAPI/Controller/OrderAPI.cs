@@ -177,6 +177,13 @@ namespace Mango.Services.OrderAPI.Controller
             }
             return _response;
         }
+        /// <summary>
+        /// Gets all the orders for the logged in user
+        /// ( if userId is null, it defaults to Admin role ),
+        /// otherwise we fetch orders for the supplied userID.
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <returns></returns>
         [HttpGet("GetOrders")]
         public async Task<ResponseDto> GetOrders(string? userId = null)
         {
@@ -200,6 +207,11 @@ namespace Mango.Services.OrderAPI.Controller
             }
             return _response;
         }
+        /// <summary>
+        /// Fetches the order by the id
+        /// </summary>
+        /// <param name="orderId"></param>
+        /// <returns></returns>
         [HttpGet("GetOrder/{orderId:int}")]
         public async Task<ResponseDto> GetOrder(int orderId)
         {
@@ -245,6 +257,7 @@ namespace Mango.Services.OrderAPI.Controller
                         Refund refund = await service.CreateAsync(options);
                     }
                     orders.Status = newStatus;
+                    _response.Message = "Order status updated successfully.";
                     await _db.SaveChangesAsync();
 
                     _response.Result = _mapper.Map<OrderHeaderDto>(orders);

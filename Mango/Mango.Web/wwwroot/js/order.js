@@ -1,14 +1,21 @@
 ﻿var dataTable;
 
 $(document).ready(function () {
-    loadDataTable();
+
+    //can be used to specifically check only the URL query parameter
+    //we check to see what the current order status has been selected
+    var url = new URLSearchParams(window.location.search);
+    let statusValue = url.get("status");
+
+    //we pass this status value to the datatable to load the list
+    loadDataTable(statusValue);
 });
 
-function loadDataTable() {
-    debugger;
+function loadDataTable(statusValue) {
     dataTable = $('#tblOrderData').DataTable({
+        order:[[0, 'desc']],
         "ajax": {
-            "url": '/Order/GetAllOrders',
+            "url": '/Order/GetAllOrders?status=' + statusValue,
             "dataSrc": 'data',
         },
         "columns": [
@@ -28,8 +35,8 @@ function loadDataTable() {
                 "width": "10%",
                 render: function (data) {
                     return `<div class="w-75 btn-group" role="group">
-                    <a href=""/order/orderDetails?orderId=${data} class="btn btn-primary mx-2"><i class="bi bi-pencil-square"></i></a>
-                    </div>  `
+                    <a href="/order/OrderDetails?orderId=${data}" class="btn btn-primary mx-2"><i class="bi bi-pencil-square"></i></a>
+                    </div>`
                 }
             },
         ]
