@@ -30,9 +30,20 @@ namespace Mango.Web.Service
                 //reusing HttpRequestMessage class and properly disposing it once done
                 using (HttpRequestMessage message = new HttpRequestMessage())
                 {
-                    //this header specifies to the endpoint that we will accept application/json content-type
-                    message.Headers.Add("Accept", "application/json");
+                    //adding this implementation to handle the multipart
+                    //form data content for the image file uploads
+                    if (RequestDto.ContentType == ContentType.MultipartFormData)
+                    {
+                        //*/* means if the content type is multipart form data,
+                        //we should accept any media type and sub type
+                        message.Headers.Add("Accept", "*/*");
+                    }
+                    else
+                    {
+                        //this header specifies to the endpoint that we will accept application/json content-type
+                        message.Headers.Add("Accept", "application/json");
 
+                    }
                     //Sending the Bearer token to the API
                     if (withBearer)
                     {
@@ -44,10 +55,45 @@ namespace Mango.Web.Service
                     //(the endpoint that will be executed to fulfill the request)
                     message.RequestUri = new Uri(RequestDto.Url);
 
-                    //this is for the content data for POST or the PUT request that we make
-                    if (RequestDto.Data != null)
+                    //handling the MultipartFormData for POST and PUT requests
+                    if (RequestDto.ContentType == ContentType.MultipartFormData)
                     {
-                        message.Content = new StringContent(JsonConvert.SerializeObject(RequestDto.Data), Encoding.UTF8, "application/json");
+                        var content = new MultipartFormDataContent();
+
+                        //in this code, we check for the content type properties inside the requestdto.data property
+                        foreach (var prop in RequestDto.Data.GetType().GetProperties())
+                        {
+                            //here we check if the requestdto.data is a form file
+                            var value = prop.GetValue(RequestDto.Data);
+
+                            //here we only check if we encounter a form file in our model/dto
+                            if (value is FormFile)
+                            {
+                                var file = (FormFile)value;
+
+                                //then we check if the form file is null, if not then we need to add it to our request content
+                                if (file != null)
+                                {
+                                    //here we add the content, we will create a file stream,
+                                    //with the property name and the file name 
+                                    content.Add(new StreamContent(file.OpenReadStream()), prop.Name, file.FileName);
+                                }
+                            }
+                            //for all the other properties, which are not form file
+                            else
+                            {
+                                //if value is null, we assign empty string, otherwise the value is passed
+                                content.Add(new StringContent(value == null ? "" : value.ToString()), prop.Name);
+                            }
+                        }
+                        message.Content = content;
+                    }
+                    else
+                    {   //this is for the application/json content data for POST or the PUT request that we make
+                        if (RequestDto.Data != null)
+                        {
+                            message.Content = new StringContent(JsonConvert.SerializeObject(RequestDto.Data), Encoding.UTF8, "application/json");
+                        }
                     }
 
                     //we receive the response from the ResponseDto that we have set up

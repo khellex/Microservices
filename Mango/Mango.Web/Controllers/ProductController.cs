@@ -61,7 +61,6 @@ namespace Mango.Web.Controllers
                 {
                     TempData["success"] = response.Message;
                     return RedirectToAction(nameof(ProductIndex));
-                    
                 }
             }
             TempData["error"] = "Something went wrong";

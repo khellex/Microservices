@@ -18,13 +18,15 @@ namespace Mango.Services.ProductAPI.Controllers
         private ResponseDto _response;
         private IMapper _mapper;
         private ILogger<ProductAPIController> _logger;
+        private readonly IConfiguration _configuration;
 
-        public ProductAPIController(ApplicationDbContext db, IMapper mapper, ILogger<ProductAPIController> logger)
+        public ProductAPIController(ApplicationDbContext db, IMapper mapper, ILogger<ProductAPIController> logger, IConfiguration configuration)
         {
             _db = db;
             _mapper = mapper;
             _response = new();
             _logger = logger;
+            _configuration = configuration;
         }
         /// <summary>
         /// GETs full list of products available in system
@@ -56,7 +58,7 @@ namespace Mango.Services.ProductAPI.Controllers
         /// </summary>
         /// <param name="productId"></param>
         /// <returns>Product object based on the supplied productID</returns>
-        [HttpGet()]
+        [HttpGet]
         [Route("{productId:int}")]
         public async Task<ResponseDto> Get(int productId)
         {
@@ -85,14 +87,42 @@ namespace Mango.Services.ProductAPI.Controllers
         /// <returns></returns>
         [HttpPost]
         [Authorize(Roles = "Admin")]
-        public async Task<ResponseDto> Post([FromBody] ProductDto productDto)
-        {
+        public async Task<ResponseDto> Post(ProductDto productDto) //adding [FromBody] tells the endpoint that the parameters will be coming from the request body
+        {                                                          //when sending multi part form data, we can remove the [FromBody] annotation
             try
             {
                 Product product = _mapper.Map<Product>(productDto);
                 await _db.Products.AddAsync(product);
                 await _db.SaveChangesAsync();
                 _response.Message = "Product created successfully";
+
+                if (productDto.Image != null)
+                {
+                    //name of the file
+                    string fileName = product.ProductId + Path.GetExtension(productDto.Image.FileName);
+
+                    //location where the file should be saved
+                    string filePath = _configuration.GetValue<string>("ProductImagePath") + fileName;
+
+                    var filePathDirectory = Path.Combine(Directory.GetCurrentDirectory(), filePath);
+
+                    using (var fileStream = new FileStream(filePathDirectory, FileMode.Create))
+                    {
+                        productDto.Image.CopyTo(fileStream);
+                    }
+
+                    //fetching the URL so we can pass it to the image URL, this fetches https://localhost:7000
+                    var baseURL = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value}";
+                    product.ImageUrl = baseURL + "/ProductImages/" + fileName;
+                    product.ImageLocalPath = filePath;
+                }
+                else
+                {
+                    //if no image is uploaded
+                    product.ImageUrl = "https://placehold.co/600x400";
+                }
+                _db.Products.Update(product);
+                await _db.SaveChangesAsync();
             }
             catch (Exception ex)
             {
@@ -109,11 +139,46 @@ namespace Mango.Services.ProductAPI.Controllers
         /// <returns>Updated product object</returns>
         [HttpPut]
         [Authorize(Roles = "Admin")]
-        public async Task<ResponseDto> Put([FromBody] ProductDto productDto)
+        public async Task<ResponseDto> Put(ProductDto productDto)
         {
             try
             {
                 Product product = _mapper.Map<Product>(productDto);
+
+                //if productDto.Image is not null, it means new image has been uploaded
+                if (productDto.Image != null)
+                {
+                    //if new image has been uploaded, we need to remove the existing image first
+                    if (!string.IsNullOrEmpty(productDto.ImageUrl))
+                    {
+                        var oldFilePathDirectory = Path.Combine(Directory.GetCurrentDirectory(), productDto.ImageLocalPath);
+                        FileInfo file = new FileInfo(oldFilePathDirectory);
+                        if (file.Exists)
+                        {
+                            file.Delete();
+                        }
+                    }
+                    //once old image is deleted, we can insert the new one
+
+                    //name of the file
+                    string fileName = product.ProductId + Path.GetExtension(productDto.Image.FileName);
+
+                    //location where the file should be saved
+                    string filePath = _configuration.GetValue<string>("ProductImagePath") + fileName;
+
+                    var filePathDirectory = Path.Combine(Directory.GetCurrentDirectory(), filePath);
+
+                    using (var fileStream = new FileStream(filePathDirectory, FileMode.Create))
+                    {
+                        productDto.Image.CopyTo(fileStream);
+                    }
+
+                    //fetching the URL so we can pass it to the image URL, this fetches https://localhost:7000
+                    var baseURL = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value}";
+                    product.ImageUrl = baseURL + "/ProductImages/" + fileName;
+                    product.ImageLocalPath = filePath;
+                }
+                
                 _db.Products.Update(product);
                 await _db.SaveChangesAsync();
                 _response.Result = _mapper.Map<ProductDto>(product);
@@ -141,6 +206,15 @@ namespace Mango.Services.ProductAPI.Controllers
                 Product? productFromDb = await _db.Products.FirstOrDefaultAsync(p => p.ProductId == productId);
                 if (productFromDb != null)
                 {
+                    if ( !string.IsNullOrEmpty(productFromDb.ImageUrl))
+                    {
+                        var oldFilePathDirectory = Path.Combine(Directory.GetCurrentDirectory(), productFromDb.ImageLocalPath);
+                        FileInfo file = new FileInfo(oldFilePathDirectory);
+                        if (file.Exists)
+                        {
+                            file.Delete();
+                        }
+                    }
                     _db.Products.Remove(productFromDb);
                     await _db.SaveChangesAsync();
                     _response.Result = _mapper.Map<ProductDto>(productFromDb);

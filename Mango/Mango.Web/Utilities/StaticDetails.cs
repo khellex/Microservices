@@ -17,6 +17,12 @@
             PUT,
             DELETE
         } 
+        public enum ContentType
+        {
+            Json,
+            MultipartFormData
+        } 
+
         //roles
         public const string AdminRole = "Admin";
         public const string CustomerRole = "Customer";
