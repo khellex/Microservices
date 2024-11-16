@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Mango.Web.Utilities;
+using System.ComponentModel.DataAnnotations;
 
 namespace Mango.Web.Models;
 public class ProductDto
@@ -13,5 +14,7 @@ public class ProductDto
     [Range(1,10)]
     public int Count { get; set; } = 1;
     public string? ImageLocalPath { get; set; }
+    [AllowedExtension(new string[] { ".jpg", ".png", ".jpeg" })] //custom attribute to check the incoming image is only .png, .jpeg or .jpg
+    [AllowedImageSize(2)]  //allows image to be of 2MB or lesser only
     public IFormFile? Image { get; set; }
 }
