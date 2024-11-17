@@ -19,7 +19,6 @@ namespace Mango.MessageBus
     /// </summary>
     public class MessageBus : IMessageBus
     {
-        private readonly string ConnectionString = "";
         public async Task PublishMessage(object message, string topicOrQueueName)
         {
             // Define a simple retry policy: retry up to 3 times with a delay of 2 seconds between retries.

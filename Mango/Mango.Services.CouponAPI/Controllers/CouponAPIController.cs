@@ -116,8 +116,6 @@ namespace Mango.Services.CouponAPI.Controllers
             try
             {
                 Coupon coupon = _mapper.Map<Coupon>(couponDTO);
-                await _db.Coupons.AddAsync(coupon);
-                await _db.SaveChangesAsync();
 
                 //implementation to create a stripe coupon
                 var options = new Stripe.CouponCreateOptions
@@ -130,9 +128,14 @@ namespace Mango.Services.CouponAPI.Controllers
                 };
 
                 var service = new Stripe.CouponService();
-                await service.CreateAsync(options);
+                Stripe.Coupon stripeCoupon =  await service.CreateAsync(options);
 
-                _response.Message = "Coupon created successfully";
+                if (stripeCoupon != null &&  !string.IsNullOrEmpty(stripeCoupon.Id))
+                {
+                    await _db.Coupons.AddAsync(coupon);
+                    await _db.SaveChangesAsync();
+                    _response.Message = "Coupon created successfully";
+                }
             }
             catch (Exception ex)
             {

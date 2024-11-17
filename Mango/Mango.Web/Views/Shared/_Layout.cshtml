@@ -1,4 +1,6 @@
-﻿<!DOCTYPE html>
+﻿@using static Mango.Web.Utilities.StaticDetails
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -28,16 +30,19 @@
                         <li class="nav-item">
                             <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
                         </li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                Content Management
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" asp-controller="Coupon" asp-action="CouponIndex">Coupons</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" asp-controller="Product" asp-action="ProductIndex">Products</a></li>
-                            </ul>
-                        </li>
+                        @if (User.IsInRole(AdminRole))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Content Management
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" asp-controller="Coupon" asp-action="CouponIndex">Coupons</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" asp-controller="Product" asp-action="ProductIndex">Products</a></li>
+                                </ul>
+                            </li>
+                        }
                         <li class="nav-item">
                             <a class="nav-link" asp-area="" asp-controller="Cart" asp-action="CartIndex">
                                 &nbsp;<i class="bi bi-cart4"></i>&nbsp;
@@ -49,7 +54,7 @@
                             </a>
                         </li>
                     </ul>
-                    <ul class ="navbar-nav">
+                    <ul class="navbar-nav">
                         @if (!User.Identity.IsAuthenticated)
                         {
                             <li class="nav-item">
