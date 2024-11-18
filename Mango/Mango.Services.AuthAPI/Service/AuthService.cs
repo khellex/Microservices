@@ -2,6 +2,7 @@
 using Mango.Services.AuthAPI.Data;
 using Mango.Services.AuthAPI.Models;
 using Mango.Services.AuthAPI.Models.Dto;
+using Mango.Services.AuthAPI.RabbitMQMessageSender;
 using Mango.Services.AuthAPI.Service.IService;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Identity;
@@ -21,11 +22,12 @@ namespace Mango.Services.AuthAPI.Service
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ILogger<AuthService> _logger;
         private readonly IJwtGenerator _jwtGenerator;
-        private readonly IMessageBus _messageBus;
+        //private readonly IMessageBus _messageBus;  //commented since we are using rabbitmq message bus in this branch
+        private readonly IRabbitMQAuthMessageSender _messageBus;
         private readonly IConfiguration _configuration;
 
         public AuthService(ApplicationDbContext db, RoleManager<IdentityRole> roleManager, UserManager<ApplicationUser> userManager,
-            ILogger<AuthService> logger, IJwtGenerator jwtGenerator, IMessageBus messageBus, IConfiguration configuration)
+            ILogger<AuthService> logger, IJwtGenerator jwtGenerator, IRabbitMQAuthMessageSender messageBus, IConfiguration configuration)
         {
             _db = db;
             _roleManager = roleManager;
@@ -152,7 +154,10 @@ namespace Mango.Services.AuthAPI.Service
                         PhoneNumber = user.PhoneNumber
                     };
                     //this will send a message request to the UserRegistrationQueue on Azure Service Bus
-                    //await _messageBus.PublishMessage(user.Email, _configuration.GetValue<string>("TopicAndQueueNames:UserRegistrationQueue"));
+                     //_messageBus.PublishMessage(user.Email, _configuration.GetValue<string>("TopicAndQueueNames:UserRegistrationQueue"));
+
+                    //service bus for rabbitmq
+                     _messageBus.SendMessage(user.Email, _configuration.GetValue<string>("TopicAndQueueNames:UserRegistrationQueue"));
                     return responseDto;
                 }
                 else
