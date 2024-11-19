@@ -3,6 +3,7 @@ using Mango.MessageBus;
 using Mango.Services.OrderAPI.Models;
 using Mango.Services.OrderAPI.Models.Dto;
 using Mango.Services.OrderAPI.Service.IService;
+using Mango.Services.ShoppingCartAPI.RabbitMQMessageSender;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -21,10 +22,11 @@ namespace Mango.Services.OrderAPI.Controller
         private ResponseDto _response;
         private readonly ApplicationDbContext _db;
         private readonly IProductService _productService;
-        private readonly IMessageBus _messageBus;
+        //private readonly IMessageBus _messageBus;
+        private readonly IRabbitMQOrderMessageSender _messageBus;
         private readonly IConfiguration _configuration;
 
-        public OrderAPI(IMapper mapper, ApplicationDbContext db, IProductService productService, IConfiguration configuration, IMessageBus messageBus)
+        public OrderAPI(IMapper mapper, ApplicationDbContext db, IProductService productService, IConfiguration configuration, IRabbitMQOrderMessageSender messageBus)
         {
             _mapper = mapper;
             _db = db;
@@ -164,7 +166,10 @@ namespace Mango.Services.OrderAPI.Controller
                     string topicName = _configuration.GetValue<string>("TopicAndQueueNames:OrderCreatedTopic");
 
                     //publishing the rewards message to the service bus topic
-                    await _messageBus.PublishMessage(rewards, topicName);
+                    //await _messageBus.SendMessage(rewards, topicName);
+
+                    //sending to rabbitmq 
+                    _messageBus.SendMessage(rewards, topicName);
 
                     _response.Result = _mapper.Map<OrderHeaderDto>(orderHeader);
                     _response.Message = "Payment validated successfully.";

@@ -19,8 +19,9 @@ builder.Services.AddSingleton(new EmailService(optionBuilder.Options));
 
 builder.Services.AddSingleton<IAzureServiceBusConsumer, AzureServiceBusConsumer>();
 
-//adding the rabbitMQ service to the container
+//adding the rabbitMQ consumer service to the container
 builder.Services.AddHostedService<RabbitMQConsumer>();
+builder.Services.AddHostedService<RabbitMQOrderConsumer>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
