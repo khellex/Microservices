@@ -23,9 +23,10 @@ namespace Mango.Services.AuthAPI.Service
         private readonly IJwtGenerator _jwtGenerator;
         private readonly IMessageBus _messageBus;
         private readonly IConfiguration _configuration;
+        private readonly IRefreshTokenService _refreshToken;
 
         public AuthService(ApplicationDbContext db, RoleManager<IdentityRole> roleManager, UserManager<ApplicationUser> userManager,
-            ILogger<AuthService> logger, IJwtGenerator jwtGenerator, IMessageBus messageBus, IConfiguration configuration)
+            ILogger<AuthService> logger, IJwtGenerator jwtGenerator, IMessageBus messageBus, IConfiguration configuration, IRefreshTokenService refreshToken)
         {
             _db = db;
             _roleManager = roleManager;
@@ -34,6 +35,7 @@ namespace Mango.Services.AuthAPI.Service
             _jwtGenerator = jwtGenerator;
             _messageBus = messageBus;
             _configuration = configuration;
+            _refreshToken = refreshToken;
         }
         /// <summary>
         /// Can be used to assign a new role to a user,
@@ -85,25 +87,34 @@ namespace Mango.Services.AuthAPI.Service
 
             try
             {
-                var user = await _db.ApplicationUsers.FirstOrDefaultAsync(u => u.UserName.ToLower() == loginRequestDto.Username.ToLower());
-                bool validUserPassword = await _userManager.CheckPasswordAsync(user, loginRequestDto.Password);
-
-                //this means the user data is available and the password is verified
-                if (user != null && validUserPassword)
+                if (loginRequestDto != null)
                 {
-                    loginResponse.User = new UserDto
+                    var user = await _db.ApplicationUsers.FirstOrDefaultAsync(u => u.UserName.ToLower() == loginRequestDto.Username.ToLower());
+                    bool validUserPassword = await _userManager.CheckPasswordAsync(user, loginRequestDto.Password);
+
+                    //this means the user data is available and the password is verified
+                    if (user != null && validUserPassword)
                     {
-                        Id = user.Id,
-                        Name = user.Name,
-                        Email = user.Email,
-                        PhoneNumber = user.PhoneNumber
-                    };
+                        loginResponse.User = new UserDto
+                        {
+                            Id = user.Id,
+                            Name = user.Name,
+                            Email = user.Email,
+                            PhoneNumber = user.PhoneNumber
+                        };
 
-                    //fetching the user roles to pass it to the claims
-                    var userRoles = await _userManager.GetRolesAsync(user);
+                        //fetching the user roles to pass it to the claims
+                        var userRoles = await _userManager.GetRolesAsync(user);
 
-                    //JWT generator
-                    loginResponse.Token = _jwtGenerator.GenerateToken(user, userRoles);
+                        //JWT access token generator
+                        loginResponse.Token = _jwtGenerator.GenerateToken(user, userRoles);
+                        loginResponse.TokenExpiryTime = DateTime.UtcNow.AddMinutes(_configuration.GetValue<int>("JwtOptions:ExpiryMinutes"));
+
+                        //generate and save the refresh token in the redis cache db
+                        loginResponse.RefreshToken = _refreshToken.GenerateRefreshToken();
+
+                        await _refreshToken.SaveRefreshTokenAsync(userId: loginResponse.User.Id, token: loginResponse.RefreshToken);
+                    }
                 }
                 else
                 {

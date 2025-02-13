@@ -44,7 +44,7 @@ namespace Mango.Web.Service
                     HttpOnly = true, // Prevents access via JavaScript
                     Secure = true,   // Ensures it is sent only over HTTPS
                     SameSite = SameSiteMode.Lax, // Mitigates CSRF
-                    Expires = DateTimeOffset.UtcNow.AddHours(2) // Set an expiration
+                    Expires = DateTimeOffset.UtcNow.AddMinutes(20) // Set an expiration
                 };
 
                 httpContext.Response.Cookies.Append(StaticDetails.TokenCookie, token, cookieOptions);

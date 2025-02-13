@@ -5,6 +5,7 @@ using Mango.Services.AuthAPI.Service.IService;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace Mango.Services.AuthAPI.Controllers
 {
@@ -13,12 +14,14 @@ namespace Mango.Services.AuthAPI.Controllers
     public class AuthAPIController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly IRefreshTokenService _refreshTokenService;
         protected ResponseDto _response;
 
-        public AuthAPIController(IAuthService authService)
+        public AuthAPIController(IAuthService authService, IRefreshTokenService refreshTokenService)
         {
             _authService = authService;
             _response = new();
+            _refreshTokenService = refreshTokenService;
         }
         /// <summary>
         /// Endpoint to register new user on the application
@@ -50,16 +53,19 @@ namespace Mango.Services.AuthAPI.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequestDto loginRequestDto)
         {
-            var loginResponse = await _authService.Login(loginRequestDto);
-            if (loginResponse.User != null)
+            if (ModelState.IsValid)
             {
-                _response.Message = "Logged in successfully.";
-                _response.Result = loginResponse;
-                return Ok(_response);
+                var loginResponse = await _authService.Login(loginRequestDto);
+                if (loginResponse.User != null)
+                {
+                    _response.Message = "Logged in successfully.";
+                    _response.Result = loginResponse;
+                    return Ok(_response);
+                }
             }
             _response.IsSuccess = false;
             _response.Message = "Username or password is incorrect.";
-            return BadRequest(_response);
+            return Unauthorized(_response);
         }
         /// <summary>
         /// 
@@ -78,6 +84,25 @@ namespace Mango.Services.AuthAPI.Controllers
                 return BadRequest(_response);
             }
             _response.Message = "Role assigned successfully.";
+            return Ok(_response);
+        }
+        /// <summary>
+        /// Endpoint used to generate a refresh token, expires after 1 hour.
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns>new Refresh & Access Token</returns>
+        [HttpPost("refresh")]
+        public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequestDto refreshTokenRequestDto)
+        {
+            RefreshTokenResponseDto newToken = await _refreshTokenService.RefreshAccessTokenAsync(refreshTokenRequestDto.RefreshToken);
+            if (newToken == null)
+            {
+                _response.IsSuccess = false;
+                _response.Message = "Something went wrong while refreshing token.";
+                return BadRequest(_response);
+            }
+            _response.Result = newToken;
+            _response.Message = "Refresh Token generated successfully.";
             return Ok(_response);
         }
     }

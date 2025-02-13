@@ -17,6 +17,7 @@ namespace Mango.Services.AuthAPI.Service
         {
             _jwtOptions = jwtOptions?.Value ?? throw new ArgumentNullException(nameof(jwtOptions));
         }
+
         public string GenerateToken(ApplicationUser applicationUser, IEnumerable<string> roles)
         {
             JwtSecurityTokenHandler tokenHandler = new();

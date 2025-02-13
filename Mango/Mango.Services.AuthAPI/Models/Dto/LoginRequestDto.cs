@@ -1,4 +1,6 @@
-﻿namespace Mango.Services.AuthAPI.Models.Dto
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Mango.Services.AuthAPI.Models.Dto
 {
     /// <summary>
     /// The user will send the following details to request login
@@ -6,7 +8,10 @@
     /// </summary>
     public class LoginRequestDto
     {
+        [Required(ErrorMessage = "Username is required.")]
         public string Username { get; set; }
+
+        [Required(ErrorMessage = "Password is required.")]
         public string Password { get; set; }
     }
 }
