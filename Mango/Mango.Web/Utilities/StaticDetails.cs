@@ -29,6 +29,7 @@
 
         //session cookie
         public const string TokenCookie = "JWT";
+        public const string RefreshTokenCookie = "refreshToken";
 
         public enum OrderStatus
         {

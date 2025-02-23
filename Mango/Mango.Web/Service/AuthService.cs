@@ -1,4 +1,5 @@
-﻿using Mango.Web.Models;
+﻿using Mango.Services.AuthAPI.Models.Dto;
+using Mango.Web.Models;
 using Mango.Web.Service.IService;
 using static Mango.Web.Utilities.StaticDetails;
 
@@ -29,6 +30,16 @@ namespace Mango.Web.Service
                 ApiType = ApiType.POST,
                 Data = loginRequestDto,
                 Url = AuthApiBaseURL + "/api/auth/login"
+            }, withBearer: false));
+        }
+
+        public async Task<ResponseDto?> RefreshTokenAsync(RefreshTokenRequestDto refreshTokenRequestDto)
+        {
+            return (await _baseService.SendAsync(new RequestDto()
+            {
+                ApiType = ApiType.POST,
+                Data = refreshTokenRequestDto,
+                Url = AuthApiBaseURL + "/api/auth/refresh"
             }, withBearer: false));
         }
 

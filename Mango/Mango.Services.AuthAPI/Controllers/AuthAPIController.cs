@@ -98,11 +98,11 @@ namespace Mango.Services.AuthAPI.Controllers
             if (newToken == null)
             {
                 _response.IsSuccess = false;
-                _response.Message = "Something went wrong while refreshing token.";
+                _response.Message = "Refresh Token has expired, please login again.";
                 return BadRequest(_response);
             }
             _response.Result = newToken;
-            _response.Message = "Refresh Token generated successfully.";
+            _response.Message = "Token generated successfully.";
             return Ok(_response);
         }
     }

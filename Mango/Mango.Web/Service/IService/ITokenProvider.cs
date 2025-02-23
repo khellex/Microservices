@@ -2,8 +2,10 @@
 {
     public interface ITokenProvider
     {
-        void SetToken(string token);
+        void SetToken(string token, string refreshToken);
         string? GetToken();
+        string? GetRefreshToken();
         void ClearToken();
+        DateTime? GetTokenExpiry();
     }
 }

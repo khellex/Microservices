@@ -1,4 +1,5 @@
-﻿using Mango.Web.Models;
+﻿using Mango.Services.AuthAPI.Models.Dto;
+using Mango.Web.Models;
 using Mango.Web.Service.IService;
 using Mango.Web.Utilities;
 using Microsoft.AspNetCore.Authentication;
@@ -58,8 +59,8 @@ namespace Mango.Web.Controllers
                 //setting the sign-in session for the logged in user
                 await SignInUser(loginResponseDto);
 
-                //setting the session token cookie for the sign-ed in user
-                _tokenProvider.SetToken(loginResponseDto.Token);
+                //setting the session token cookie for the signed in user
+                _tokenProvider.SetToken(loginResponseDto.Token, loginResponseDto.RefreshToken);
 
                 TempData["success"] = responseDto.Message;
                 return RedirectToAction("Index", "Home");
@@ -168,6 +169,41 @@ namespace Mango.Web.Controllers
             var principal = new ClaimsPrincipal(identity);
 
             await _contextAccessor.HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+        }
+        #endregion
+        #region SessionRefresh
+        public async Task<IActionResult> RefreshSession()
+        {
+            var refreshToken = Request.Cookies["refreshToken"];
+            if (!string.IsNullOrEmpty(refreshToken))
+            {
+                ResponseDto? responseDto = await _authService.RefreshTokenAsync(new RefreshTokenRequestDto() { RefreshToken = refreshToken });
+                if (responseDto != null)
+                {
+                    LoginResponseDto? loginResponseDto = JsonConvert.DeserializeObject<LoginResponseDto>(Convert.ToString(responseDto.Result));
+                    _tokenProvider.SetToken(loginResponseDto.Token, loginResponseDto.RefreshToken);
+                }
+            }
+            return RedirectToAction("Login");
+        }
+        /// <summary>
+        /// This method is used to get the expiry time of the token
+        /// only if the user is logged in
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public IActionResult GetTokenExpiry()
+        {
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                DateTime? expiryTime = _tokenProvider.GetTokenExpiry();
+
+                if (expiryTime != null)
+                {
+                    return Ok(new { expiresAt = expiryTime });
+                }
+            }
+            return Unauthorized();
         }
         #endregion
     }

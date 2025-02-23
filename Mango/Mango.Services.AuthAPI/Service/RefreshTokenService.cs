@@ -43,18 +43,18 @@ namespace Mango.Services.AuthAPI.Service
             {
                 Token = token,
                 UserId = userId,
-                TokenExpiry = DateTime.UtcNow.AddDays(7),
+                TokenExpiry = DateTime.UtcNow.AddDays(1), //refresh token expires after 1 day
                 IsRevoked = false
             };
 
             string json = JsonSerializer.Serialize(refreshToken);
-            await _cache.StringSetAsync($"refresh_token:{token}", json, TimeSpan.FromDays(7));
+            await _cache.StringSetAsync($"refresh_token:{token}", json, TimeSpan.FromDays(1)); //here the TimeSpan.FromDays(1) is how long the refresh token will be held in cache
+            await _cache.StringSetAsync($"refresh_token:{userId}", token, TimeSpan.FromDays(1));
         }
 
         public async Task<RefreshTokenModel?> ValidateRefreshTokenAsync(string token)
         {
             string? json = await _cache.StringGetAsync($"refresh_token:{token}");
-
 
             if (string.IsNullOrEmpty(json))
                 return null;
@@ -64,6 +64,11 @@ namespace Mango.Services.AuthAPI.Service
             if (refreshToken == null || refreshToken.IsRevoked || refreshToken.TokenExpiry < DateTime.UtcNow)
                 return null;
 
+            // Ensure this is the user's latest refresh token
+            string? latestToken = await _cache.StringGetAsync($"refresh_token:{refreshToken.UserId}");
+            if (latestToken != token)
+                return null; // Token is no longer valid
+
             return refreshToken;
         }
 
@@ -72,10 +77,8 @@ namespace Mango.Services.AuthAPI.Service
             var tokenData = await ValidateRefreshTokenAsync(refreshToken);
             if (tokenData == null) return null;
 
-            // Revoke old token
-            tokenData.IsRevoked = true;
-            await _cache.StringSetAsync($"refresh_token:{refreshToken}", JsonSerializer.Serialize(tokenData));
-            //_cache.KeyDeleteAsync($"refresh_token:{refreshToken}");
+            // Revoke old token by deleting it from cache
+            await _cache.KeyDeleteAsync($"refresh_token:{refreshToken}");
 
             var user = await _userManager.FindByIdAsync(tokenData.UserId);
             var userRoles = await _userManager.GetRolesAsync(user);
