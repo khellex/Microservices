@@ -6,6 +6,6 @@
         string? GetToken();
         string? GetRefreshToken();
         void ClearToken();
-        DateTime? GetTokenExpiry();
+        DateTime? GetTokenExpiry(string? token = null);
     }
 }

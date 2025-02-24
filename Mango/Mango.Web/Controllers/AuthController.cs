@@ -1,11 +1,11 @@
-﻿using Mango.Services.AuthAPI.Models.Dto;
-using Mango.Web.Models;
+﻿using Mango.Web.Models;
 using Mango.Web.Service.IService;
 using Mango.Web.Utilities;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.SignalR;
 using Newtonsoft.Json;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -22,12 +22,14 @@ namespace Mango.Web.Controllers
         private readonly IAuthService _authService;
         private readonly ITokenProvider _tokenProvider;
         private readonly IHttpContextAccessor _contextAccessor;
+        private readonly IHubContext<SignalRSessionHub> _hubContext;
 
-        public AuthController(IAuthService authService, ITokenProvider tokenProvider, IHttpContextAccessor contextAccessor)
+        public AuthController(IAuthService authService, ITokenProvider tokenProvider, IHttpContextAccessor contextAccessor, IHubContext<SignalRSessionHub> hubContext)
         {
             _authService = authService;
             _tokenProvider = tokenProvider; 
             _contextAccessor = contextAccessor;
+            _hubContext = hubContext;
         }
         #region Log in
         /// <summary>
@@ -61,6 +63,12 @@ namespace Mango.Web.Controllers
 
                 //setting the session token cookie for the signed in user
                 _tokenProvider.SetToken(loginResponseDto.Token, loginResponseDto.RefreshToken);
+
+                //fetching the token expiry, for current httpcontext request, until the request is not completed
+                // the token does not get set into cookie, hence we need to pass the token as parameter to GetTokenExpiry func
+                var tokenExpiry = _tokenProvider.GetTokenExpiry(token: loginResponseDto.Token);
+
+                await _hubContext.Clients.User(loginResponseDto.User.Id).SendAsync("SessionExpiryTime", tokenExpiry);
 
                 TempData["success"] = responseDto.Message;
                 return RedirectToAction("Index", "Home");
@@ -169,41 +177,6 @@ namespace Mango.Web.Controllers
             var principal = new ClaimsPrincipal(identity);
 
             await _contextAccessor.HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
-        }
-        #endregion
-        #region SessionRefresh
-        public async Task<IActionResult> RefreshSession()
-        {
-            var refreshToken = Request.Cookies["refreshToken"];
-            if (!string.IsNullOrEmpty(refreshToken))
-            {
-                ResponseDto? responseDto = await _authService.RefreshTokenAsync(new RefreshTokenRequestDto() { RefreshToken = refreshToken });
-                if (responseDto != null)
-                {
-                    LoginResponseDto? loginResponseDto = JsonConvert.DeserializeObject<LoginResponseDto>(Convert.ToString(responseDto.Result));
-                    _tokenProvider.SetToken(loginResponseDto.Token, loginResponseDto.RefreshToken);
-                }
-            }
-            return RedirectToAction("Login");
-        }
-        /// <summary>
-        /// This method is used to get the expiry time of the token
-        /// only if the user is logged in
-        /// </summary>
-        /// <returns></returns>
-        [HttpGet]
-        public IActionResult GetTokenExpiry()
-        {
-            if (User.Identity?.IsAuthenticated == true)
-            {
-                DateTime? expiryTime = _tokenProvider.GetTokenExpiry();
-
-                if (expiryTime != null)
-                {
-                    return Ok(new { expiresAt = expiryTime });
-                }
-            }
-            return Unauthorized();
         }
         #endregion
     }

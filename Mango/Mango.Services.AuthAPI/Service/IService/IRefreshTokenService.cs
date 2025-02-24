@@ -10,5 +10,6 @@ namespace Mango.Services.AuthAPI.Service.IService
         Task SaveRefreshTokenAsync(string userId, string token);
         Task<RefreshTokenResponseDto> RefreshAccessTokenAsync(string refreshToken);
         Task<RefreshTokenModel?> ValidateRefreshTokenAsync(string token);
+        Task RevokeToken(string refreshToken);
     }
 }

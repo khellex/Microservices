@@ -44,7 +44,6 @@ namespace Mango.Services.AuthAPI.Service
                 Token = token,
                 UserId = userId,
                 TokenExpiry = DateTime.UtcNow.AddDays(1), //refresh token expires after 1 day
-                IsRevoked = false
             };
 
             string json = JsonSerializer.Serialize(refreshToken);
@@ -61,7 +60,7 @@ namespace Mango.Services.AuthAPI.Service
 
             var refreshToken = JsonSerializer.Deserialize<RefreshTokenModel>(json);
 
-            if (refreshToken == null || refreshToken.IsRevoked || refreshToken.TokenExpiry < DateTime.UtcNow)
+            if (refreshToken == null || refreshToken.TokenExpiry < DateTime.UtcNow)
                 return null;
 
             // Ensure this is the user's latest refresh token
@@ -95,8 +94,43 @@ namespace Mango.Services.AuthAPI.Service
             {
                 RefreshToken = newRefreshToken,
                 Token = newAccessToken,
-                TokenExpiryTime = DateTime.UtcNow.AddMinutes(_config.GetValue<int>("JwtOptions:ExpiryMinutes")),
+                TokenExpiryTime = DateTime.UtcNow.AddMinutes(_config.GetValue<int>("ApiSettings:JwtOptions:ExpiryMinutes")),
             };
+        }
+
+        public async Task RevokeToken(string token)
+        {
+            // Retrieve token details from Redis
+            string? json = await _cache.StringGetAsync($"refresh_token:{token}");
+
+            if (string.IsNullOrEmpty(json))
+                return; // Token does not exist
+
+            var refreshToken = JsonSerializer.Deserialize<RefreshTokenModel>(json);
+            if (refreshToken == null)
+                return; // Deserialization failed
+
+            string userId = refreshToken.UserId;
+
+            // Fetch all tokens associated with the user
+            var userTokensKey = $"refresh_token:{userId}";
+            string? tokensJson = await _cache.StringGetAsync(userTokensKey);
+
+            if (!string.IsNullOrEmpty(tokensJson))
+            {
+                var userTokens = JsonSerializer.Deserialize<List<string>>(tokensJson);
+                if (userTokens != null)
+                {
+                    // Delete each refresh token from Redis
+                    foreach (var userToken in userTokens)
+                    {
+                        await _cache.KeyDeleteAsync($"refresh_token:{userToken}");
+                    }
+                }
+            }
+
+            // Delete the user's token list from Redis
+            await _cache.KeyDeleteAsync(userTokensKey);
         }
     }
 }

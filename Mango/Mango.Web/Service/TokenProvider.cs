@@ -79,16 +79,19 @@ namespace Mango.Web.Service
                 httpContext.Response.Cookies.Append(StaticDetails.RefreshTokenCookie, refreshToken, refreshTokenOptions);
             }
         }
-
-        public DateTime? GetTokenExpiry()
+        //within the same httpContext request, GetToken returns null,
+        //hence we need to pass the token as parameter for the initial login
+        public DateTime? GetTokenExpiry(string? token = null)
         {
-            var token = GetToken();
-
             if (string.IsNullOrEmpty(token))
             {
-                return null; // No token found
-            }
+                token = GetToken();
 
+                if (string.IsNullOrEmpty(token))
+                {
+                    return null; // No token found
+                }
+            }
             var handler = new JwtSecurityTokenHandler();
             var jwtToken = handler.ReadToken(token) as JwtSecurityToken;
 

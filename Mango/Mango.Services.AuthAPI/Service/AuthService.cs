@@ -108,7 +108,7 @@ namespace Mango.Services.AuthAPI.Service
 
                         //JWT access token generator
                         loginResponse.Token = _jwtGenerator.GenerateToken(user, userRoles);
-                        loginResponse.TokenExpiryTime = DateTime.UtcNow.AddMinutes(_configuration.GetValue<int>("JwtOptions:ExpiryMinutes"));
+                        loginResponse.TokenExpiryTime = DateTime.UtcNow.AddMinutes(_configuration.GetValue<int>("ApiSettings:JwtOptions:ExpiryMinutes"));
 
                         //generate and save the refresh token in the redis cache db
                         loginResponse.RefreshToken = _refreshToken.GenerateRefreshToken();

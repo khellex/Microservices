@@ -1,4 +1,4 @@
-﻿const SESSION_TIMEOUT = 10 * 60 * 1000; // 10 minutes inactivity timeout
+﻿const SESSION_TIMEOUT = 3 * 60 * 1000; // 10 minutes inactivity timeout
 const TOKEN_REFRESH_THRESHOLD = 2 * 60 * 1000; // Refresh 2 minutes before expiry
 const LOGOUT_WARNING_THRESHOLD = 1 * 60 * 1000; // Show warning 1 minute before logout
 
@@ -7,18 +7,70 @@ let tokenExpiryTime = null;
 let inactivityTimer, refreshTokenTimer, logoutWarningTimer;
 let isRefreshingToken = false; // Prevent duplicate refresh requests
 
+const connection = new signalR.HubConnectionBuilder()
+    .withUrl("/sessionHub", { withCredentials: true })
+    .withAutomaticReconnect()
+    .configureLogging(signalR.LogLevel.Information)
+    .build();
+
+// Start the SignalR connection
+async function startConnection() {
+    try {
+        await connection.start();
+        console.log("Connected to SignalR hub");
+        fetchStoredExpiry(); // Retrieve stored expiry time
+        scheduleTokenRefresh(); // Schedule token refresh based on expiry time
+    } catch (err) {
+        console.error("SignalR connection failed:", err);
+        setTimeout(startConnection, 5000); // Retry after 5 seconds
+    }
+}
+
+// Receive session expiry time from the server
+connection.on("SessionExpiryTime", function (expiryTime) {
+    console.log("Received session expiry time:", expiryTime);
+
+    // Convert expiry time to a proper Date object and store it
+    const expiryDate = new Date(expiryTime);
+    sessionStorage.setItem("sessionExpiry", expiryDate.getTime()); // Store as a timestamp
+    localStorage.setItem("syncSessionExpiry", expiryDate.getTime()); // Sync across tabs
+
+    tokenExpiryTime = expiryDate.getTime();
+    console.log("Session expires at:", expiryDate.toISOString());
+
+    scheduleTokenRefresh(); // Recalculate refresh time
+});
+
+// Retrieve session expiry from sessionStorage
+function fetchStoredExpiry() {
+    const storedExpiry = sessionStorage.getItem("sessionExpiry");
+    if (storedExpiry) {
+        tokenExpiryTime = Number(storedExpiry);
+        console.log("Loaded stored expiry:", new Date(tokenExpiryTime).toISOString());
+    }
+}
+
 // Refresh JWT token using AJAX
 function refreshToken() {
     if (isRefreshingToken) return; // Prevent multiple calls
     isRefreshingToken = true;
 
     $.ajax({
-        url: "/Auth/RefreshSession",
+        url: "/Session/RefreshSession",
         type: "POST",
         xhrFields: { withCredentials: true },
-        success: function () {
+        success: function (data) {
             console.log("Token refreshed successfully");
-            fetchTokenExpiry(); // Update token expiry after refresh
+
+            // Update token expiry after refresh
+            if (data.expiresAt) {
+                const newExpiry = new Date(data.expiresAt).getTime();
+                sessionStorage.setItem("sessionExpiry", newExpiry);
+                localStorage.setItem("syncSessionExpiry", newExpiry);
+                tokenExpiryTime = newExpiry;
+                scheduleTokenRefresh();
+            }
+
             isRefreshingToken = false;
         },
         error: function () {
@@ -31,7 +83,9 @@ function refreshToken() {
 // Logout user
 function logoutUser() {
     console.warn("Logging out user...");
-    window.location.href = "/Auth/Login"; // Redirect to login page
+    sessionStorage.clear();
+    localStorage.removeItem("syncSessionExpiry");
+    window.location.href = "/Auth/Logout"; // Redirect to login page
 }
 
 // Reset inactivity timer on user activity
@@ -74,6 +128,8 @@ function scheduleTokenRefresh() {
     const timeUntilExpiry = tokenExpiryTime - Date.now();
     clearTimeout(refreshTokenTimer); // Ensure only one scheduled refresh
 
+    console.log(`Token expires in ${timeUntilExpiry / 1000}s`);
+
     if (timeUntilExpiry > TOKEN_REFRESH_THRESHOLD) {
         refreshTokenTimer = setTimeout(refreshToken, timeUntilExpiry - TOKEN_REFRESH_THRESHOLD);
     } else {
@@ -81,37 +137,19 @@ function scheduleTokenRefresh() {
     }
 }
 
-// Fetch token expiry from the server
-function fetchTokenExpiry() {
-    $.ajax({
-        url: "/Auth/GetTokenExpiry",
-        type: "GET",
-        xhrFields: { withCredentials: true },
-        success: function (data) {
-            if (data.expiresAt) {
-                tokenExpiryTime = new Date(data.expiresAt).getTime();
-                console.log("Token expires at:", new Date(tokenExpiryTime).toISOString());
-                scheduleTokenRefresh();
-            } else {
-                console.warn("Invalid token expiry data received, logging out...");
-                logoutUser();
-            }
-        },
-        error: function (xhr) {
-            if (xhr.status === 401) {
-            //    console.warn("Session expired (401), logging out...");
-            //    logoutUser();
-            } else {
-                console.warn("Failed to fetch token expiry, retrying...");
-                //setTimeout(fetchTokenExpiry, 5000); // Retry after 5 seconds
-            }
-        }
-    });
-}
+// Listen for session expiry updates across tabs
+window.addEventListener("storage", function (event) {
+    if (event.key === "syncSessionExpiry") {
+        sessionStorage.setItem("sessionExpiry", event.newValue);
+        tokenExpiryTime = Number(event.newValue);
+        scheduleTokenRefresh();
+    }
+});
 
 // Initialize session tracking
 function initSessionTracking() {
-    fetchTokenExpiry(); // Get initial token expiry
+    startConnection();
+    fetchStoredExpiry(); // Load stored expiry time
     resetInactivityTimer();
 
     // Monitor user activity
