@@ -68,7 +68,7 @@ namespace Mango.Web.Controllers
                 // the token does not get set into cookie, hence we need to pass the token as parameter to GetTokenExpiry func
                 var tokenExpiry = _tokenProvider.GetTokenExpiry(token: loginResponseDto.Token);
 
-                await _hubContext.Clients.User(loginResponseDto.User.Id).SendAsync("SessionExpiryTime", tokenExpiry);
+                await _hubContext.Clients.All.SendAsync("SessionExpiryTime", tokenExpiry);
 
                 TempData["success"] = responseDto.Message;
                 return RedirectToAction("Index", "Home");
@@ -146,11 +146,18 @@ namespace Mango.Web.Controllers
         /// <returns></returns>
         public async Task<IActionResult> Logout()
         {
+            string? token = Request.Cookies["refreshToken"];
+
             //signs out the user
             await _contextAccessor.HttpContext.SignOutAsync();
 
             //clears the token session cookie
             _tokenProvider.ClearToken();
+
+            if (!string.IsNullOrEmpty(token))
+            {
+                await _authService.LogoutAsync(new RefreshTokenRequestDto { RefreshToken = token });
+            }
 
             TempData["success"] = "Successfully logged out";
             return RedirectToAction("Index","Home");

@@ -1,5 +1,4 @@
-﻿using Mango.Services.AuthAPI.Models.Dto;
-using Mango.Web.Models;
+﻿using Mango.Web.Models;
 
 namespace Mango.Web.Service.IService
 {
@@ -9,5 +8,6 @@ namespace Mango.Web.Service.IService
         Task<ResponseDto?> LoginAsync(LoginRequestDto loginRequestDto);
         Task<ResponseDto?> AssignRoleAsync(RegistrationRequestDto registrationRequestDto);
         Task<ResponseDto?> RefreshTokenAsync(RefreshTokenRequestDto refreshTokenRequestDto);
+        Task<ResponseDto?> LogoutAsync(RefreshTokenRequestDto refreshTokenRequestDto);
     }
 }

@@ -1,5 +1,4 @@
-﻿using Mango.Services.AuthAPI.Models.Dto;
-using Mango.Web.Models;
+﻿using Mango.Web.Models;
 using Mango.Web.Service.IService;
 using Mango.Web.Utilities;
 using Microsoft.AspNetCore.Mvc;
@@ -28,9 +27,13 @@ namespace Mango.Web.Controllers
                 {
                     LoginResponseDto? loginResponseDto = JsonConvert.DeserializeObject<LoginResponseDto>(Convert.ToString(responseDto.Result));
                     _tokenProvider.SetToken(loginResponseDto.Token, loginResponseDto.RefreshToken);
+
+                    // Return success response with new expiry time
+                    return Json(new { success = true, expiresAt = _tokenProvider.GetTokenExpiry(loginResponseDto.Token) });
                 }
             }
-            return RedirectToAction("Login");
+            // Return error response if refresh fails
+            return Json(new { success = false, message = "Session refresh failed" });
         }
     }
     #endregion

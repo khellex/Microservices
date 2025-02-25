@@ -98,39 +98,23 @@ namespace Mango.Services.AuthAPI.Service
             };
         }
 
-        public async Task RevokeToken(string token)
+        public async Task<bool> RevokeToken(string refreshToken)
         {
             // Retrieve token details from Redis
-            string? json = await _cache.StringGetAsync($"refresh_token:{token}");
+            string? json = await _cache.StringGetAsync($"refresh_token:{refreshToken}");
 
-            if (string.IsNullOrEmpty(json))
-                return; // Token does not exist
-
-            var refreshToken = JsonSerializer.Deserialize<RefreshTokenModel>(json);
-            if (refreshToken == null)
-                return; // Deserialization failed
-
-            string userId = refreshToken.UserId;
-
-            // Fetch all tokens associated with the user
-            var userTokensKey = $"refresh_token:{userId}";
-            string? tokensJson = await _cache.StringGetAsync(userTokensKey);
-
-            if (!string.IsNullOrEmpty(tokensJson))
+            if (!string.IsNullOrEmpty(json))
             {
-                var userTokens = JsonSerializer.Deserialize<List<string>>(tokensJson);
-                if (userTokens != null)
-                {
-                    // Delete each refresh token from Redis
-                    foreach (var userToken in userTokens)
-                    {
-                        await _cache.KeyDeleteAsync($"refresh_token:{userToken}");
-                    }
-                }
-            }
+                var tokenJSON = JsonSerializer.Deserialize<RefreshTokenModel>(json);
+                if (tokenJSON == null)
+                    return false; // Deserialization failed
 
-            // Delete the user's token list from Redis
-            await _cache.KeyDeleteAsync(userTokensKey);
+                // Fetch token associated with the user and delete
+                await _cache.StringGetDeleteAsync($"refresh_token:{tokenJSON.UserId}");
+                await _cache.KeyDeleteAsync($"refresh_token:{refreshToken}");
+                return true;
+            }
+            return false; // Token does not exist
         }
     }
 }

@@ -105,5 +105,25 @@ namespace Mango.Services.AuthAPI.Controllers
             _response.Message = "Token generated successfully.";
             return Ok(_response);
         }
+        /// <summary>
+        /// Endpoint used to revoke all refresh tokens associated with a user
+        /// after logging out.
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns>new Refresh & Access Token</returns>
+        [HttpPost("revokeToken")]
+        public async Task<IActionResult> RevokeToken([FromBody] RefreshTokenRequestDto refreshTokenRequestDto)
+        {
+            bool tokenRevocation = await _refreshTokenService.RevokeToken(refreshTokenRequestDto.RefreshToken);
+            if (!tokenRevocation)
+            {
+                _response.IsSuccess = false;
+                _response.Message = "Something went wrong during token revocation";
+                return BadRequest(_response);
+            }
+            _response.Result = tokenRevocation;
+            _response.Message = "User token revoked successfully.";
+            return Ok(_response);
+        }
     }
 }
